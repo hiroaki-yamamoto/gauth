@@ -4,34 +4,18 @@ import "time"
 
 import "github.com/gbrlsnchs/jwt"
 
-func composeToken(
-	username string,
-	signer jwt.Signer,
-	audience string,
-	expiresAt time.Time,
-	issuer string,
-	subject string,
-) ([]byte, error) {
-	now := time.Now().UTC()
-	jot := &jwt.JWT{
-		Issuer:         issuer,
-		Subject:        subject,
-		Audience:       audience,
-		ExpirationTime: expiresAt.Unix(),
-		NotBefore:      now.Unix(),
-		IssuedAt:       now.Unix(),
-		ID:             username,
-	}
-	jot.SetAlgorithm(signer)
-	payload, err := jwt.Marshal(jot)
+// ComposeToken generates JWT token string from specified paramenters.
+func ComposeToken(model *jwt.JWT, signer jwt.Signer) ([]byte, error) {
+	model.SetAlgorithm(signer)
+	payload, err := jwt.Marshal(model)
 	if err != nil {
 		return nil, err
 	}
 	return signer.Sign(payload)
 }
 
-// extractToken extracts token string into verified JWT object.
-func extractToken(
+// ExtractToken extracts token string into verified JWT object.
+func ExtractToken(
 	token string,
 	signer jwt.Signer,
 	audience string,
