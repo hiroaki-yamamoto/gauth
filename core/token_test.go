@@ -45,3 +45,23 @@ func TestNormalTokenFunc(t *testing.T) {
 		t.Fatal("The extracted token and token must be the same.")
 	}
 }
+
+func TestNonParsableTokenTest(t *testing.T) {
+	signer := jwt.NewHS256("test secret key")
+	_, err := ExtractToken("", signer, "", "", "")
+	if err == nil {
+		t.Fatal("extractToken must have an error: ", err)
+	}
+}
+
+func TestUnmashalFailure(t *testing.T) {
+	signer := jwt.NewHS256("test secret key")
+	tok := map[string]float64{"Test": 1.0, "exp": 123.456}
+	payload, _ := jwt.Marshal(tok)
+	txt, _ := signer.Sign(payload)
+	_, err := ExtractToken(string(txt), signer, "", "", "")
+	if err == nil {
+		t.Log(string(txt))
+		t.Fatal("extractToken must have an error: ", err)
+	}
+}

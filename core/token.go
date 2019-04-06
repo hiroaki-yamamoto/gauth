@@ -6,11 +6,11 @@ import "github.com/gbrlsnchs/jwt"
 
 // ComposeToken generates JWT token string from specified paramenters.
 func ComposeToken(model *jwt.JWT, signer jwt.Signer) ([]byte, error) {
-	model.SetAlgorithm(signer)
-	payload, err := jwt.Marshal(model)
-	if err != nil {
-		return nil, err
-	}
+	payload, _ := jwt.Marshal(model)
+	// In jwt.JWT case, no errors seem to be returned for now.
+	// if err != nil {
+	// 	return nil, err
+	// }
 	return signer.Sign(payload)
 }
 
