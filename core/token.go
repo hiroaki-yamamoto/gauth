@@ -27,10 +27,10 @@ func ExtractToken(
 		return nil, err
 	}
 	var jot jwt.JWT
-	if err = jwt.Unmarshal(payload, &jot); err != nil {
+	if err = signer.Verify(payload, sig); err != nil {
 		return nil, err
 	}
-	if err = signer.Verify(payload, sig); err != nil {
+	if err = jwt.Unmarshal(payload, &jot); err != nil {
 		return nil, err
 	}
 	now := time.Now().UTC()
