@@ -30,8 +30,11 @@ func TestNormalTokenFunc(t *testing.T) {
 			err,
 		)
 	}
+	// signer, token.Audience, token.Issuer, token.Subject,
 	extractedToken, err := ExtractToken(
-		string(composedToken), signer, token.Audience, token.Issuer, token.Subject,
+		string(composedToken), &Config{
+			signer, token.Audience, token.Issuer, token.Subject,
+		},
 	)
 	if err != nil {
 		t.Fatal(
@@ -48,7 +51,7 @@ func TestNormalTokenFunc(t *testing.T) {
 
 func TestNonParsableTokenTest(t *testing.T) {
 	signer := jwt.NewHS256("test secret key")
-	tok, err := ExtractToken("", signer, "", "", "")
+	tok, err := ExtractToken("", &Config{signer, "", "", ""})
 	if err == nil {
 		t.Fatal("extractToken must have an error: ", tok)
 	}
@@ -59,7 +62,7 @@ func TestUnmashalFailure(t *testing.T) {
 	tok := map[string]float64{"Test": 1.0, "exp": 123.456}
 	payload, _ := jwt.Marshal(tok)
 	txt, _ := signer.Sign(payload)
-	exTok, err := ExtractToken(string(txt), signer, "", "", "")
+	exTok, err := ExtractToken(string(txt), &Config{signer, "", "", ""})
 	if err == nil {
 		t.Log(string(txt))
 		t.Fatal("extractToken must have an error: ", exTok)
@@ -71,7 +74,9 @@ func TestVerificationFailure(t *testing.T) {
 	extractSigner := jwt.NewHS256("really test secret key")
 	tok := GetFixture()
 	payload, _ := ComposeToken(tok, composeSigner)
-	extracted, err := ExtractToken(string(payload), extractSigner, "", "", "")
+	extracted, err := ExtractToken(
+		string(payload), &Config{extractSigner, "", "", ""},
+	)
 	if err == nil {
 		t.Fatal("extractToken must have an error: ", extracted)
 	}
@@ -81,7 +86,7 @@ func TestValidationFailure(t *testing.T) {
 	signer := jwt.NewHS256("test secret key")
 	extractAndCheck := func(payload []byte, tok *jwt.JWT, t *testing.T) {
 		extracted, err := ExtractToken(
-			string(payload), signer, tok.Audience, tok.Issuer, tok.Subject,
+			string(payload), &Config{signer, tok.Audience, tok.Issuer, tok.Subject},
 		)
 		if err == nil {
 			t.Fatal("extractToken must have an error: ", extracted)
@@ -126,7 +131,8 @@ func TestValidationFailure(t *testing.T) {
 		tok2.ID = "fakeTestID"
 		payload, _ := ComposeToken(tok1, signer)
 		_, err := ExtractToken(
-			string(payload), signer, tok2.Audience, tok2.Issuer, tok2.Subject,
+			string(payload),
+			&Config{signer, tok2.Audience, tok2.Issuer, tok2.Subject},
 		)
 		if err != nil {
 			t.Fatal("extractToken must not have an error: ", err)

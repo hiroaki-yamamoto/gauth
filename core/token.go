@@ -1,8 +1,10 @@
 package core
 
-import "time"
+import (
+	"time"
 
-import "github.com/gbrlsnchs/jwt"
+	"github.com/gbrlsnchs/jwt"
+)
 
 // ComposeToken generates JWT token string from specified paramenters.
 func ComposeToken(model *jwt.JWT, signer jwt.Signer) ([]byte, error) {
@@ -17,29 +19,26 @@ func ComposeToken(model *jwt.JWT, signer jwt.Signer) ([]byte, error) {
 // ExtractToken extracts token string into verified JWT object.
 func ExtractToken(
 	token string,
-	signer jwt.Signer,
-	audience string,
-	issuer string,
-	subject string,
+	config *Config,
 ) (*jwt.JWT, error) {
+	now := time.Now().UTC()
 	payload, sig, err := jwt.Parse(token)
 	if err != nil {
 		return nil, err
 	}
 	var jot jwt.JWT
-	if err = signer.Verify(payload, sig); err != nil {
+	if err = config.Signer.Verify(payload, sig); err != nil {
 		return nil, err
 	}
 	if err = jwt.Unmarshal(payload, &jot); err != nil {
 		return nil, err
 	}
-	now := time.Now().UTC()
 	err = jot.Validate(
 		jwt.IssuedAtValidator(now),
 		jwt.ExpirationTimeValidator(now),
-		jwt.AudienceValidator(audience),
-		jwt.IssuerValidator(issuer),
-		jwt.SubjectValidator(subject),
+		jwt.AudienceValidator(config.Audience),
+		jwt.IssuerValidator(config.Issuer),
+		jwt.SubjectValidator(config.Subject),
 	)
 	if err != nil {
 		return nil, err
