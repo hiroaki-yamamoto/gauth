@@ -4,8 +4,6 @@ package middleware
 
 import (
 	"context"
-	"errors"
-	"log"
 	"net/http"
 )
 
@@ -13,35 +11,11 @@ import (
 	"github.com/hiroaki-yamamoto/gauth/core"
 )
 
-// FindUser represents a function to find a user by username,
-type FindUser func(con interface{}, username string) (interface{}, error)
-
 type contextkey struct {
 	name string
 }
 
 var userCtxKey = &contextkey{"user"}
-
-// JwtToUser converts jwStr to the corresponding user.
-func JwtToUser(
-	jwtStr string,
-	findUserFunc FindUser,
-	con interface{},
-	config *core.Config,
-) (interface{}, error) {
-	token, err := core.ExtractToken(jwtStr, config)
-	if err != nil {
-		return nil, err
-	}
-	if len(token.ID) < 1 {
-		return nil, errors.New("Not authenticated user")
-	}
-	user, err := findUserFunc(con, token.ID)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
 
 // GetUser get user from context
 func GetUser(ctx context.Context) interface{} {
@@ -56,20 +30,7 @@ func HeaderMiddleware(
 	findUserFunc FindUser,
 	config *core.Config,
 ) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c := r.Header.Get(headerName)
-			user, err := JwtToUser(c, findUserFunc, con, config)
-			if err != nil {
-				next.ServeHTTP(w, r)
-				log.Print(err)
-				return
-			}
-			ctx := context.WithValue(r.Context(), userCtxKey, user)
-			r = r.WithContext(ctx)
-			next.ServeHTTP(w, r)
-		})
-	}
+	return headerMiddlewareBase(headerName, con, findUserFunc, config, false)
 }
 
 // CookieMiddleware reads JWT from cookie and
@@ -80,22 +41,5 @@ func CookieMiddleware(
 	findUserFunc FindUser,
 	config *core.Config,
 ) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c, err := r.Cookie(cookieName)
-			if err != nil {
-				next.ServeHTTP(w, r)
-				return
-			}
-			user, err := JwtToUser(c.Value, findUserFunc, con, config)
-			if err != nil {
-				next.ServeHTTP(w, r)
-				log.Print(err)
-				return
-			}
-			ctx := context.WithValue(r.Context(), userCtxKey, user)
-			r = r.WithContext(ctx)
-			next.ServeHTTP(w, r)
-		})
-	}
+	return cookieMiddlewareBase(cookieName, con, findUserFunc, config, false)
 }
