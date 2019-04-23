@@ -22,13 +22,14 @@ type contextkey struct {
 
 var userCtxKey = &contextkey{"user"}
 
-func getUser(
-	c string,
+// JwtToUser converts jwStr to the corresponding user.
+func JwtToUser(
+	jwtStr string,
 	findUserFunc FindUser,
 	con interface{},
 	config *core.Config,
 ) (interface{}, error) {
-	token, err := core.ExtractToken(c, config)
+	token, err := core.ExtractToken(jwtStr, config)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +43,11 @@ func getUser(
 	return user, nil
 }
 
+// GetUser get user from context
+func GetUser(ctx context.Context) interface{} {
+	return ctx.Value(userCtxKey)
+}
+
 // HeaderMiddleware reads JWT from http header and
 // puts the found user to the context.
 func HeaderMiddleware(
@@ -53,7 +59,7 @@ func HeaderMiddleware(
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := r.Header.Get(headerName)
-			user, err := getUser(c, findUserFunc, con, config)
+			user, err := JwtToUser(c, findUserFunc, con, config)
 			if err != nil {
 				next.ServeHTTP(w, r)
 				log.Print(err)
@@ -81,7 +87,7 @@ func CookieMiddleware(
 				next.ServeHTTP(w, r)
 				return
 			}
-			user, err := getUser(c.Value, findUserFunc, con, config)
+			user, err := JwtToUser(c.Value, findUserFunc, con, config)
 			if err != nil {
 				next.ServeHTTP(w, r)
 				log.Print(err)
