@@ -9,7 +9,10 @@ jobs:
       - restore_cache:
           keys:
             - ci-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
-      - run :
+      - run:
+          name: "Get dep"
+          command: "go get -u github.com/golang/dep/cmd/dep"
+      - run:
           name: "Run dep init"
           command: "dep init"
       - run:
@@ -20,7 +23,7 @@ jobs:
       - save_cache:
           key: ci-{{ .Branch }}-{{ checksum "rGopkg.lock" }}
           paths:
-            - "./vendor"
+            - "/go/src"
       - run:
           name: "Test & Upload the coverage"
           command: |
