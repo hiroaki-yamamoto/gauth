@@ -13,8 +13,8 @@ jobs:
           name: "Get dep"
           command: "go get -u github.com/golang/dep/cmd/dep"
       - run:
-          name: "Run dep init"
-          command: "dep init"
+          name: "Run dep ensure"
+          command: "dep ensure"
       - run:
           name: "Download Code Climate App"
           command: |
