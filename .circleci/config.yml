@@ -21,7 +21,7 @@ jobs:
             curl -o ../cc-test-reporter -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 &&
             chmod +x ../cc-test-reporter
       - save_cache:
-          key: ci-{{ .Branch }}-{{ checksum "rGopkg.lock" }}
+          key: ci-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
           paths:
             - "/go/src"
       - run:
