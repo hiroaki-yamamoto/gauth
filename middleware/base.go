@@ -24,8 +24,9 @@ func processError(
 	log.Print(err)
 	if failOnError {
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string][]Error{
-			"errors": []Error{Error{err.Error()}},
+			"errors": []Error{Error{"Not Authorized."}},
 		})
 		return
 	}
