@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -52,9 +51,7 @@ func cookieMiddlewareBase(
 				processError(w, r, next, err, failOnError)
 				return
 			}
-			ctx := context.WithValue(r.Context(), userCtxKey, user)
-			r = r.WithContext(ctx)
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, SetUser(r, user))
 		})
 	}
 }
@@ -74,9 +71,7 @@ func headerMiddlewareBase(
 				processError(w, r, next, err, failOnError)
 				return
 			}
-			ctx := context.WithValue(r.Context(), userCtxKey, user)
-			r = r.WithContext(ctx)
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, SetUser(r, user))
 		})
 	}
 }

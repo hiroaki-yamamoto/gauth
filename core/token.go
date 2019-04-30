@@ -1,19 +1,33 @@
 package core
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gbrlsnchs/jwt"
 )
 
 // ComposeToken generates JWT token string from specified paramenters.
-func ComposeToken(model *jwt.JWT, signer jwt.Signer) ([]byte, error) {
+func ComposeToken(model *jwt.JWT, config Config) ([]byte, error) {
+	if model == nil {
+		return nil, errors.New("model must be non-nil")
+	}
+	now := time.Now().UTC().Unix()
+	if model.ExpirationTime == 0 {
+		model.ExpirationTime = model.ExpirationTime
+	}
+	if model.IssuedAt == 0 {
+		model.IssuedAt = now
+	}
+	if model.NotBefore == 0 {
+		model.NotBefore = now
+	}
 	payload, _ := jwt.Marshal(model)
 	// In jwt.JWT case, no errors seem to be returned for now.
 	// if err != nil {
 	// 	return nil, err
 	// }
-	return signer.Sign(payload)
+	return config.Signer.Sign(payload)
 }
 
 // ExtractToken extracts token string into verified JWT object.
