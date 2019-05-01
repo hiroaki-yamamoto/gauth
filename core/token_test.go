@@ -29,7 +29,8 @@ func TestNormalTokenFunc(t *testing.T) {
 		jwt.NewHS256("test secret key"),
 		token.Audience,
 		token.Issuer,
-		token.Subject, 2 * time.Hour,
+		token.Subject,
+		2 * time.Hour,
 	}
 	// signer, token.Audience, token.Issuer, token.Subject,
 	t.Run("For token", func(t *testing.T) {
