@@ -49,6 +49,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/gbrlsnchs/jwt",
+    "github.com/google/go-cmp/cmp",
     "gotest.tools/assert",
   ]
   solver-name = "gps-cdcl"
