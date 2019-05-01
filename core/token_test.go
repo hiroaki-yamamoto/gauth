@@ -58,9 +58,8 @@ func TestNormalTokenFunc(t *testing.T) {
 func TestNonParsableTokenTest(t *testing.T) {
 	signer := jwt.NewHS256("test secret key")
 	tok, err := ExtractToken("", &Config{signer, "", "", "", 2 * time.Hour})
-	if err == nil {
-		t.Fatal("extractToken must have an error: ", tok)
-	}
+	assert.ErrorContains(t, err, "jwt:")
+	assert.Assert(t, tok == nil, tok)
 }
 
 func TestUnmashalFailure(t *testing.T) {
@@ -71,10 +70,8 @@ func TestUnmashalFailure(t *testing.T) {
 	exTok, err := ExtractToken(
 		string(txt), &Config{signer, "", "", "", 2 * time.Hour},
 	)
-	if err == nil {
-		t.Log(string(txt))
-		t.Fatal("extractToken must have an error: ", exTok)
-	}
+	assert.ErrorContains(t, err, "json:", string(txt))
+	assert.Assert(t, exTok == nil, exTok)
 }
 
 func TestVerificationFailure(t *testing.T) {
