@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/hiroaki-yamamoto/gauth/core"
+	"github.com/hiroaki-yamamoto/gauth/models"
 )
 
 // Error represents an error.
@@ -51,6 +53,22 @@ func cookieMiddlewareBase(
 				processError(w, r, next, err, failOnError)
 				return
 			}
+			defer func(u interface{}, w http.ResponseWriter) {
+				respUser, ok := u.(models.IUser)
+				if !ok {
+					log.Print("Authorized user not detected.")
+					return
+				}
+				tok, err := core.ComposeID(respUser.GetID(), config)
+				if err != nil {
+					log.Print("Composing token failed: ", err)
+				}
+				http.SetCookie(w, &http.Cookie{
+					Name:    cookieName,
+					Value:   string(tok),
+					Expires: time.Now().UTC().Add(config.ExpireIn),
+				})
+			}(user, w)
 			next.ServeHTTP(w, SetUser(r, user))
 		})
 	}

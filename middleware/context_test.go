@@ -21,6 +21,10 @@ type User struct {
 	Errors   []Error `json:"errors,omitempty"`
 }
 
+func (me User) GetID() string {
+	return me.Username
+}
+
 type Con struct{}
 
 var handlerFunc = http.HandlerFunc(func(

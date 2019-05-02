@@ -23,7 +23,10 @@ func GetUser(ctx context.Context) interface{} {
 }
 
 // SetUser set user to context
-func SetUser(r *http.Request, user interface{}) *http.Request {
+func SetUser(
+	r *http.Request,
+	user interface{},
+) *http.Request {
 	return r.WithContext(context.WithValue(r.Context(), userCtxKey, user))
 }
 
