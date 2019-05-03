@@ -62,6 +62,7 @@ func cookieMiddlewareBase(
 				tok, err := core.ComposeID(respUser.GetID(), config)
 				if err != nil {
 					log.Print("Composing token failed: ", err)
+					return
 				}
 				http.SetCookie(w, &http.Cookie{
 					Name:    cookieName,
