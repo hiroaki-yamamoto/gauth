@@ -1,4 +1,4 @@
-package middleware
+package middleware_test
 
 // Context test
 
@@ -13,12 +13,22 @@ import (
 	"github.com/gbrlsnchs/jwt"
 	"gotest.tools/assert"
 
+	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
+	mid "github.com/hiroaki-yamamoto/gauth/middleware"
 )
 
+type TimeMock struct {
+	Time time.Time
+}
+
+func (me TimeMock) Now() time.Time {
+	return me.Time
+}
+
 type User struct {
-	Username string  `json:"username,omitempty"`
-	Errors   []Error `json:"errors,omitempty"`
+	Username string      `json:"username,omitempty"`
+	Errors   []mid.Error `json:"errors,omitempty"`
 }
 
 func (me User) GetID() string {
@@ -31,7 +41,7 @@ var handlerFunc = http.HandlerFunc(func(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	user := GetUser(r.Context())
+	user := mid.GetUser(r.Context())
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 })
@@ -39,14 +49,15 @@ var handlerFunc = http.HandlerFunc(func(
 func cookieTest(
 	username string,
 	cookiename string,
-	conf *core.Config,
+	conf *_conf.Config,
 	code int,
 	user User,
 	expdiff time.Duration,
 	srvHandler *http.Handler,
 	autoExtend bool,
 ) func(t *testing.T) {
-	now := time.Now().UTC()
+	mid.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
+	now := mid.Clock.Now()
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		rec := httptest.NewRecorder()
@@ -79,11 +90,11 @@ func cookieTest(
 		if autoExtend && session != nil {
 			tok, err := core.ExtractToken(session.Value, conf)
 			assert.NilError(t, err)
-			tokExpY, tokExpM, tokExpD := time.Unix(tok.ExpirationTime, 0).Date()
-			expY, expM, expD := time.Now().UTC().Add(3600 * time.Hour).Date()
-			assert.Equal(t, tokExpY, expY)
-			assert.Equal(t, tokExpM, expM)
-			assert.Equal(t, tokExpD, expD)
+			assert.Equal(
+				t,
+				time.Unix(tok.ExpirationTime, 0),
+				mid.Clock.Now().Add(3600*time.Hour),
+			)
 		} else {
 			assert.Assert(t, session == nil)
 		}
@@ -98,7 +109,7 @@ func cookieTest(
 
 func headerTest(
 	username string,
-	conf *core.Config,
+	conf *_conf.Config,
 	code int,
 	user User,
 	expdiff time.Duration,
@@ -130,20 +141,20 @@ func headerTest(
 
 func TestHeaderMiddleware(t *testing.T) {
 	con := &Con{}
-	conf := core.Config{
+	conf := _conf.Config{
 		Signer:   jwt.NewHS256("test"),
 		Audience: "Test Audience",
 		Issuer:   "Test Issuer",
 		Subject:  "Test Subject",
 	}
-	handler := HeaderMiddleware(
+	handler := mid.HeaderMiddleware(
 		"Authorization", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
-			return User{username, []Error{}}, nil
+			return User{username, []mid.Error{}}, nil
 		}, &conf,
 	)(handlerFunc)
-	errorHandler := HeaderMiddleware(
+	errorHandler := mid.HeaderMiddleware(
 		"Authorization", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
@@ -155,7 +166,7 @@ func TestHeaderMiddleware(t *testing.T) {
 		"There's token in the header",
 		headerTest(
 			"test_username", &conf, http.StatusOK,
-			User{"test_username", []Error(nil)}, 2*time.Hour,
+			User{"test_username", []mid.Error(nil)}, 2*time.Hour,
 			&handler,
 		),
 	)
@@ -195,21 +206,21 @@ func TestHeaderMiddleware(t *testing.T) {
 
 func TestCookieHandlerMiddleware(t *testing.T) {
 	con := &Con{}
-	conf := core.Config{
+	conf := _conf.Config{
 		Signer:   jwt.NewHS256("test"),
 		Audience: "Test Audience",
 		Issuer:   "Test Issuer",
 		Subject:  "Test Subject",
 		ExpireIn: 3600 * time.Hour,
 	}
-	handler := CookieMiddleware(
+	handler := mid.CookieMiddleware(
 		"session", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
-			return User{username, []Error{}}, nil
+			return User{username, []mid.Error{}}, nil
 		}, &conf,
 	)(handlerFunc)
-	errorHandler := CookieMiddleware(
+	errorHandler := mid.CookieMiddleware(
 		"session", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
@@ -221,7 +232,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 		"There's token in the cookie",
 		cookieTest(
 			"test_username", "session", &conf,
-			http.StatusOK, User{"test_username", []Error(nil)},
+			http.StatusOK, User{"test_username", []mid.Error(nil)},
 			2*time.Hour, &handler, true,
 		),
 	)

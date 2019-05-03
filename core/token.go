@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gbrlsnchs/jwt"
+	"github.com/hiroaki-yamamoto/gauth/config"
 )
 
 // ComposeToken generates JWT token string from specified paramenters.
@@ -18,7 +19,7 @@ func ComposeToken(model *jwt.JWT, signer jwt.Signer) ([]byte, error) {
 
 // ComposeID generates JWT token string with specified ID
 // (that is generally used as an username) and Config.
-func ComposeID(ID string, config *Config) ([]byte, error) {
+func ComposeID(ID string, config *config.Config) ([]byte, error) {
 	now := time.Now()
 	jwt := &jwt.JWT{
 		Issuer:         config.Issuer,
@@ -35,7 +36,7 @@ func ComposeID(ID string, config *Config) ([]byte, error) {
 // ExtractToken extracts token string into verified JWT object.
 func ExtractToken(
 	token string,
-	config *Config,
+	config *config.Config,
 ) (*jwt.JWT, error) {
 	now := time.Now().UTC()
 	payload, sig, err := jwt.Parse(token)

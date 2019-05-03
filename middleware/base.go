@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
+	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
 	"github.com/hiroaki-yamamoto/gauth/models"
 )
@@ -38,7 +38,7 @@ func cookieMiddlewareBase(
 	cookieName string,
 	con interface{},
 	findUserFunc FindUser,
-	config *core.Config,
+	config *_conf.Config,
 	failOnError bool,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -67,7 +67,7 @@ func cookieMiddlewareBase(
 				http.SetCookie(w, &http.Cookie{
 					Name:    cookieName,
 					Value:   string(tok),
-					Expires: time.Now().UTC().Add(config.ExpireIn),
+					Expires: Clock.Now().Add(config.ExpireIn),
 				})
 			}(user, w)
 			next.ServeHTTP(w, SetUser(r, user))
@@ -79,7 +79,7 @@ func headerMiddlewareBase(
 	headerName string,
 	con interface{},
 	findUserFunc FindUser,
-	config *core.Config,
+	config *_conf.Config,
 	failOnError bool,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

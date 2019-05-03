@@ -1,10 +1,11 @@
-package core
+package config_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	_conf "github.com/hiroaki-yamamoto/gauth/config"
 
 	"github.com/gbrlsnchs/jwt"
 	"gotest.tools/assert"
@@ -14,14 +15,14 @@ import (
 // Config Test
 
 func TestConfigNew(t *testing.T) {
-	config := &Config{
+	config := &_conf.Config{
 		jwt.NewHS256("test"),
 		"test audience",
 		"test issuer",
 		"test subject",
 		2 * time.Hour,
 	}
-	newConfig, err := New(
+	newConfig, err := _conf.New(
 		config.Signer,
 		config.Audience,
 		config.Issuer,
@@ -36,7 +37,7 @@ func TestConfigNew(t *testing.T) {
 }
 
 func TestConfigNewWithNegExp(t *testing.T) {
-	config, err := New(
+	config, err := _conf.New(
 		jwt.NewHS256("test"),
 		"test audience",
 		"test issuer",
@@ -48,13 +49,13 @@ func TestConfigNewWithNegExp(t *testing.T) {
 }
 
 func TestConfigNewWithZeroExp(t *testing.T) {
-	config := &Config{
+	config := &_conf.Config{
 		Signer:   jwt.NewHS256("test"),
 		Audience: "test audience",
 		Issuer:   "test issuer",
 		Subject:  "test subject",
 	}
-	newConfig, err := New(
+	newConfig, err := _conf.New(
 		config.Signer,
 		config.Audience,
 		config.Issuer,

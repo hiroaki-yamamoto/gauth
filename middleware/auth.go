@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/hiroaki-yamamoto/gauth/core"
+	"github.com/hiroaki-yamamoto/gauth/config"
 )
 
 // Authentication required (or not) middleware
@@ -16,7 +16,7 @@ func HeaderLoginRequired(
 	headerName string,
 	con interface{},
 	findUserFunc FindUser,
-	config *core.Config,
+	config *config.Config,
 ) func(http.Handler) http.Handler {
 	return headerMiddlewareBase(headerName, con, findUserFunc, config, true)
 }
@@ -29,7 +29,7 @@ func CookieLoginRequired(
 	cookieName string,
 	con interface{},
 	findUserFunc FindUser,
-	config *core.Config,
+	config *config.Config,
 ) func(http.Handler) http.Handler {
 	return cookieMiddlewareBase(cookieName, con, findUserFunc, config, true)
 }

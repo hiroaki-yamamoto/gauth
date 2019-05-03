@@ -5,10 +5,8 @@ package middleware
 import (
 	"context"
 	"net/http"
-)
 
-import (
-	"github.com/hiroaki-yamamoto/gauth/core"
+	_conf "github.com/hiroaki-yamamoto/gauth/config"
 )
 
 type contextkey struct {
@@ -36,7 +34,7 @@ func HeaderMiddleware(
 	headerName string,
 	con interface{},
 	findUserFunc FindUser,
-	config *core.Config,
+	config *_conf.Config,
 ) func(http.Handler) http.Handler {
 	return headerMiddlewareBase(headerName, con, findUserFunc, config, false)
 }
@@ -47,7 +45,7 @@ func CookieMiddleware(
 	cookieName string,
 	con interface{},
 	findUserFunc FindUser,
-	config *core.Config,
+	config *_conf.Config,
 ) func(http.Handler) http.Handler {
 	return cookieMiddlewareBase(cookieName, con, findUserFunc, config, false)
 }

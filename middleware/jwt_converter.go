@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 
+	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
 )
 
@@ -16,7 +17,7 @@ func JwtToUser(
 	jwtStr string,
 	findUserFunc FindUser,
 	con interface{},
-	config *core.Config,
+	config *_conf.Config,
 ) (interface{}, error) {
 	token, err := core.ExtractToken(jwtStr, config)
 	if err != nil {

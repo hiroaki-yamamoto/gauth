@@ -1,4 +1,4 @@
-package middleware
+package middleware_test
 
 import (
 	"errors"
@@ -7,26 +7,27 @@ import (
 	"time"
 
 	"github.com/gbrlsnchs/jwt"
-	"github.com/hiroaki-yamamoto/gauth/core"
+	_conf "github.com/hiroaki-yamamoto/gauth/config"
+	mid "github.com/hiroaki-yamamoto/gauth/middleware"
 	"gotest.tools/assert"
 )
 
 func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	con := &Con{}
-	conf := core.Config{
+	conf := _conf.Config{
 		Signer:   jwt.NewHS256("test"),
 		Audience: "Test Audience",
 		Issuer:   "Test Issuer",
 		Subject:  "Test Subject",
 	}
-	handler := HeaderLoginRequired(
+	handler := mid.HeaderLoginRequired(
 		"Authorization", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
-			return User{username, []Error{}}, nil
+			return User{username, []mid.Error{}}, nil
 		}, &conf,
 	)(handlerFunc)
-	errorHandler := HeaderLoginRequired(
+	errorHandler := mid.HeaderLoginRequired(
 		"Authorization", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
@@ -38,7 +39,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 		"There's token in the header",
 		headerTest(
 			"test_username", &conf, http.StatusOK,
-			User{"test_username", []Error(nil)}, 2*time.Hour,
+			User{"test_username", []mid.Error(nil)}, 2*time.Hour,
 			&handler,
 		),
 	)
@@ -46,7 +47,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 		"Empty ID in the header",
 		headerTest(
 			"", &conf, http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, 2*time.Hour,
 			&handler,
 		),
 	)
@@ -54,7 +55,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 		"There's expired token in the header",
 		headerTest(
 			"test_username", &conf, http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, -2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, -2*time.Hour,
 			&handler,
 		),
 	)
@@ -62,7 +63,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 		"findUserFunc returns an error",
 		headerTest(
 			"test_username", &conf, http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, 2*time.Hour,
 			&errorHandler,
 		),
 	)
@@ -70,7 +71,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 		"There's token in cookie, but header middleware shouldn't recognize it.",
 		cookieTest(
 			"test_username", "session", &conf, http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, 2*time.Hour,
 			&handler, false,
 		),
 	)
@@ -78,21 +79,21 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 
 func TestCookieLoginRequiredMiddleware(t *testing.T) {
 	con := &Con{}
-	conf := core.Config{
+	conf := _conf.Config{
 		Signer:   jwt.NewHS256("test"),
 		Audience: "Test Audience",
 		Issuer:   "Test Issuer",
 		Subject:  "Test Subject",
 		ExpireIn: 3600 * time.Hour,
 	}
-	handler := CookieLoginRequired(
+	handler := mid.CookieLoginRequired(
 		"session", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
-			return User{username, []Error{}}, nil
+			return User{username, []mid.Error{}}, nil
 		}, &conf,
 	)(handlerFunc)
-	errorHandler := CookieLoginRequired(
+	errorHandler := mid.CookieLoginRequired(
 		"session", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
@@ -104,7 +105,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		"There's token in the cookie",
 		cookieTest(
 			"test_username", "session", &conf,
-			http.StatusOK, User{"test_username", []Error(nil)},
+			http.StatusOK, User{"test_username", []mid.Error(nil)},
 			2*time.Hour, &handler, true,
 		),
 	)
@@ -112,7 +113,8 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		"There's token in the **different** cookie",
 		cookieTest(
 			"test_username", "auth", &conf,
-			http.StatusUnauthorized, User{Errors: []Error{Error{"Not Authorized."}}},
+			http.StatusUnauthorized,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}},
 			2*time.Hour, &handler, false,
 		),
 	)
@@ -121,7 +123,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		cookieTest(
 			"", "session", &conf,
 			http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, 2*time.Hour,
 			&handler, false,
 		),
 	)
@@ -130,7 +132,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "session", &conf,
 			http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, -2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, -2*time.Hour,
 			&handler, false,
 		),
 	)
@@ -139,7 +141,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "session", &conf,
 			http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, 2*time.Hour,
 			&errorHandler, false,
 		),
 	)
@@ -148,7 +150,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		headerTest(
 			"test_username", &conf,
 			http.StatusUnauthorized,
-			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
+			User{Errors: []mid.Error{mid.Error{"Not Authorized."}}}, 2*time.Hour,
 			&handler,
 		),
 	)

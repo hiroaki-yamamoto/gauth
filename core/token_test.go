@@ -1,4 +1,4 @@
-package core
+package core_test
 
 import (
 	"testing"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/gbrlsnchs/jwt"
 	"github.com/google/go-cmp/cmp"
+	_conf "github.com/hiroaki-yamamoto/gauth/config"
+	"github.com/hiroaki-yamamoto/gauth/core"
 	"gotest.tools/assert"
 )
 
@@ -25,18 +27,18 @@ func GetFixture() *jwt.JWT {
 
 func TestNormalTokenFunc(t *testing.T) {
 	token := GetFixture()
-	config := Config{
-		jwt.NewHS256("test secret key"),
-		token.Audience,
-		token.Issuer,
-		token.Subject,
-		2 * time.Hour,
+	config := _conf.Config{
+		Signer:   jwt.NewHS256("test secret key"),
+		Audience: token.Audience,
+		Issuer:   token.Issuer,
+		Subject:  token.Subject,
+		ExpireIn: 2 * time.Hour,
 	}
 	// signer, token.Audience, token.Issuer, token.Subject,
 	t.Run("For token", func(t *testing.T) {
-		composedToken, err := ComposeToken(token, config.Signer)
+		composedToken, err := core.ComposeToken(token, config.Signer)
 		assert.NilError(t, err)
-		extractedToken, err := ExtractToken(string(composedToken), &config)
+		extractedToken, err := core.ExtractToken(string(composedToken), &config)
 		assert.NilError(t, err)
 		assert.DeepEqual(
 			t, *extractedToken, *token,
@@ -44,9 +46,9 @@ func TestNormalTokenFunc(t *testing.T) {
 		)
 	})
 	t.Run("For id", func(t *testing.T) {
-		composedToken, err := ComposeID(token.ID, &config)
+		composedToken, err := core.ComposeID(token.ID, &config)
 		assert.NilError(t, err)
-		extractedToken, err := ExtractToken(string(composedToken), &config)
+		extractedToken, err := core.ExtractToken(string(composedToken), &config)
 		assert.NilError(t, err)
 		assert.DeepEqual(
 			t, *extractedToken, *token,
@@ -57,7 +59,13 @@ func TestNormalTokenFunc(t *testing.T) {
 
 func TestNonParsableTokenTest(t *testing.T) {
 	signer := jwt.NewHS256("test secret key")
-	tok, err := ExtractToken("", &Config{signer, "", "", "", 2 * time.Hour})
+	tok, err := core.ExtractToken("", &_conf.Config{
+		Signer:   signer,
+		Audience: "",
+		Issuer:   "",
+		Subject:  "",
+		ExpireIn: 2 * time.Hour,
+	})
 	assert.ErrorContains(t, err, "jwt:")
 	assert.Assert(t, tok == nil, tok)
 }
@@ -67,8 +75,14 @@ func TestUnmashalFailure(t *testing.T) {
 	tok := map[string]float64{"Test": 1.0, "exp": 123.456}
 	payload, _ := jwt.Marshal(tok)
 	txt, _ := signer.Sign(payload)
-	exTok, err := ExtractToken(
-		string(txt), &Config{signer, "", "", "", 2 * time.Hour},
+	exTok, err := core.ExtractToken(
+		string(txt), &_conf.Config{
+			Signer:   signer,
+			Audience: "",
+			Issuer:   "",
+			Subject:  "",
+			ExpireIn: 2 * time.Hour,
+		},
 	)
 	assert.ErrorContains(t, err, "json:", string(txt))
 	assert.Assert(t, exTok == nil, exTok)
@@ -78,9 +92,15 @@ func TestVerificationFailure(t *testing.T) {
 	composeSigner := jwt.NewHS256("test secret key")
 	extractSigner := jwt.NewHS256("really test secret key")
 	tok := GetFixture()
-	payload, _ := ComposeToken(tok, composeSigner)
-	extracted, err := ExtractToken(
-		string(payload), &Config{extractSigner, "", "", "", 2 * time.Hour},
+	payload, _ := core.ComposeToken(tok, composeSigner)
+	extracted, err := core.ExtractToken(
+		string(payload), &_conf.Config{
+			Signer:   extractSigner,
+			Audience: "",
+			Issuer:   "",
+			Subject:  "",
+			ExpireIn: 2 * time.Hour,
+		},
 	)
 	if err == nil {
 		t.Fatal("extractToken must have an error: ", extracted)
@@ -90,9 +110,15 @@ func TestVerificationFailure(t *testing.T) {
 func TestValidationFailure(t *testing.T) {
 	signer := jwt.NewHS256("test secret key")
 	extractAndCheck := func(payload []byte, tok *jwt.JWT, t *testing.T) {
-		extracted, err := ExtractToken(
+		extracted, err := core.ExtractToken(
 			string(payload),
-			&Config{signer, tok.Audience, tok.Issuer, tok.Subject, 2 * time.Hour},
+			&_conf.Config{
+				Signer:   signer,
+				Audience: tok.Audience,
+				Issuer:   tok.Issuer,
+				Subject:  tok.Subject,
+				ExpireIn: 2 * time.Hour,
+			},
 		)
 		if err == nil {
 			t.Fatal("extractToken must have an error: ", extracted)
@@ -101,44 +127,50 @@ func TestValidationFailure(t *testing.T) {
 	t.Run("Issued at is Future", func(t *testing.T) {
 		tok := GetFixture()
 		tok.IssuedAt = now.Add(5 * time.Hour).Unix()
-		payload, _ := ComposeToken(tok, signer)
+		payload, _ := core.ComposeToken(tok, signer)
 		extractAndCheck(payload, tok, t)
 	})
 	t.Run("Already Expired", func(t *testing.T) {
 		tok := GetFixture()
 		tok.ExpirationTime = now.Add(-5 * time.Hour).Unix()
-		payload, _ := ComposeToken(tok, signer)
+		payload, _ := core.ComposeToken(tok, signer)
 		extractAndCheck(payload, tok, t)
 	})
 	t.Run("Audience is not correct", func(t *testing.T) {
 		tok1 := GetFixture()
 		tok2 := GetFixture()
 		tok2.Audience = "Fake test audience"
-		payload, _ := ComposeToken(tok1, signer)
+		payload, _ := core.ComposeToken(tok1, signer)
 		extractAndCheck(payload, tok2, t)
 	})
 	t.Run("Issuer is not correct", func(t *testing.T) {
 		tok1 := GetFixture()
 		tok2 := GetFixture()
 		tok2.Issuer = "Fake Test Issuer"
-		payload, _ := ComposeToken(tok1, signer)
+		payload, _ := core.ComposeToken(tok1, signer)
 		extractAndCheck(payload, tok2, t)
 	})
 	t.Run("Subject is not correct", func(t *testing.T) {
 		tok1 := GetFixture()
 		tok2 := GetFixture()
 		tok2.Issuer = "Fake Test Issuer"
-		payload, _ := ComposeToken(tok1, signer)
+		payload, _ := core.ComposeToken(tok1, signer)
 		extractAndCheck(payload, tok2, t)
 	})
 	t.Run("ID must not be validated", func(t *testing.T) {
 		tok1 := GetFixture()
 		tok2 := GetFixture()
 		tok2.ID = "fakeTestID"
-		payload, _ := ComposeToken(tok1, signer)
-		_, err := ExtractToken(
+		payload, _ := core.ComposeToken(tok1, signer)
+		_, err := core.ExtractToken(
 			string(payload),
-			&Config{signer, tok2.Audience, tok2.Issuer, tok2.Subject, 2 * time.Hour},
+			&_conf.Config{
+				Signer:   signer,
+				Audience: tok2.Audience,
+				Issuer:   tok2.Issuer,
+				Subject:  tok2.Subject,
+				ExpireIn: 2 * time.Hour,
+			},
 		)
 		if err != nil {
 			t.Fatal("extractToken must not have an error: ", err)
