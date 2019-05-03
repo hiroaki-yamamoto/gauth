@@ -44,6 +44,7 @@ func cookieTest(
 	user User,
 	expdiff time.Duration,
 	srvHandler *http.Handler,
+	autoExtend bool,
 ) func(t *testing.T) {
 	now := time.Now().UTC()
 	return func(t *testing.T) {
@@ -64,6 +65,29 @@ func cookieTest(
 			Value: string(token),
 		})
 		(*srvHandler).ServeHTTP(rec, req)
+
+		cookie := rec.Header().Get("Set-Cookie")
+		header := http.Header{}
+		header.Add("Cookie", cookie)
+		session, err := (&http.Request{Header: header}).Cookie(cookiename)
+		if autoExtend {
+			assert.NilError(t, err)
+		} else {
+			assert.Error(t, err, "http: named cookie not present")
+		}
+
+		if autoExtend && session != nil {
+			tok, err := core.ExtractToken(session.Value, conf)
+			assert.NilError(t, err)
+			tokExpY, tokExpM, tokExpD := time.Unix(tok.ExpirationTime, 0).Date()
+			expY, expM, expD := time.Now().UTC().Add(3600 * time.Hour).Date()
+			assert.Equal(t, tokExpY, expY)
+			assert.Equal(t, tokExpM, expM)
+			assert.Equal(t, tokExpD, expD)
+		} else {
+			assert.Assert(t, session == nil)
+		}
+
 		resUser := User{}
 		err = json.NewDecoder(rec.Body).Decode(&resUser)
 		assert.NilError(t, err)
@@ -164,7 +188,7 @@ func TestHeaderMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "session", &conf, http.StatusOK,
 			User{}, 2*time.Hour,
-			&handler,
+			&handler, false,
 		),
 	)
 }
@@ -176,6 +200,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 		Audience: "Test Audience",
 		Issuer:   "Test Issuer",
 		Subject:  "Test Subject",
+		ExpireIn: 3600 * time.Hour,
 	}
 	handler := CookieMiddleware(
 		"session", con,
@@ -197,7 +222,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "session", &conf,
 			http.StatusOK, User{"test_username", []Error(nil)},
-			2*time.Hour, &handler,
+			2*time.Hour, &handler, true,
 		),
 	)
 	t.Run(
@@ -205,7 +230,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "auth", &conf,
 			http.StatusOK, User{},
-			2*time.Hour, &handler,
+			2*time.Hour, &handler, false,
 		),
 	)
 	t.Run(
@@ -214,7 +239,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 			"", "session", &conf,
 			http.StatusOK,
 			User{}, 2*time.Hour,
-			&handler,
+			&handler, false,
 		),
 	)
 	t.Run(
@@ -223,7 +248,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 			"test_username", "session", &conf,
 			http.StatusOK,
 			User{}, -2*time.Hour,
-			&handler,
+			&handler, false,
 		),
 	)
 	t.Run(
@@ -232,7 +257,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 			"test_username", "session", &conf,
 			http.StatusOK,
 			User{}, 2*time.Hour,
-			&errorHandler,
+			&errorHandler, false,
 		),
 	)
 	t.Run(

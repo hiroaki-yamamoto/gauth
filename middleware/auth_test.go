@@ -71,7 +71,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "session", &conf, http.StatusUnauthorized,
 			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
-			&handler,
+			&handler, false,
 		),
 	)
 }
@@ -83,6 +83,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		Audience: "Test Audience",
 		Issuer:   "Test Issuer",
 		Subject:  "Test Subject",
+		ExpireIn: 3600 * time.Hour,
 	}
 	handler := CookieLoginRequired(
 		"session", con,
@@ -104,7 +105,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "session", &conf,
 			http.StatusOK, User{"test_username", []Error(nil)},
-			2*time.Hour, &handler,
+			2*time.Hour, &handler, true,
 		),
 	)
 	t.Run(
@@ -112,7 +113,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "auth", &conf,
 			http.StatusUnauthorized, User{Errors: []Error{Error{"Not Authorized."}}},
-			2*time.Hour, &handler,
+			2*time.Hour, &handler, false,
 		),
 	)
 	t.Run(
@@ -121,7 +122,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 			"", "session", &conf,
 			http.StatusUnauthorized,
 			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
-			&handler,
+			&handler, false,
 		),
 	)
 	t.Run(
@@ -130,7 +131,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 			"test_username", "session", &conf,
 			http.StatusUnauthorized,
 			User{Errors: []Error{Error{"Not Authorized."}}}, -2*time.Hour,
-			&handler,
+			&handler, false,
 		),
 	)
 	t.Run(
@@ -139,7 +140,7 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 			"test_username", "session", &conf,
 			http.StatusUnauthorized,
 			User{Errors: []Error{Error{"Not Authorized."}}}, 2*time.Hour,
-			&errorHandler,
+			&errorHandler, false,
 		),
 	)
 	t.Run(
