@@ -26,13 +26,17 @@ func (me TimeMock) Now() time.Time {
 	return me.Time
 }
 
-type User struct {
+type UserBase struct {
 	Username string      `json:"username,omitempty"`
 	Errors   []mid.Error `json:"errors,omitempty"`
 }
 
+type User struct {
+	UserBase
+}
+
 func (me User) GetID() string {
-	return me.Username
+	return me.UserBase.Username
 }
 
 type Con struct{}
@@ -51,7 +55,7 @@ func cookieTest(
 	cookiename string,
 	conf *_conf.Config,
 	code int,
-	user User,
+	user interface{},
 	expdiff time.Duration,
 	srvHandler *http.Handler,
 	autoExtend bool,
@@ -99,11 +103,19 @@ func cookieTest(
 			assert.Assert(t, session == nil)
 		}
 
-		resUser := User{}
+		resUser := UserBase{}
 		err = json.NewDecoder(rec.Body).Decode(&resUser)
 		assert.NilError(t, err)
-		assert.Equal(t, rec.Code, code)
-		assert.DeepEqual(t, resUser, user)
+
+		expUser, ok := user.(User)
+		if ok {
+			assert.Equal(t, rec.Code, code)
+			assert.Equal(t, resUser.Username, expUser.UserBase.Username)
+			assert.DeepEqual(t, resUser.Errors, expUser.UserBase.Errors)
+		} else {
+			expUser := user.(UserBase)
+			assert.DeepEqual(t, resUser, expUser)
+		}
 	}
 }
 
@@ -151,7 +163,7 @@ func TestHeaderMiddleware(t *testing.T) {
 		"Authorization", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
-			return User{username, []mid.Error{}}, nil
+			return User{UserBase{username, []mid.Error{}}}, nil
 		}, &conf,
 	)(handlerFunc)
 	errorHandler := mid.HeaderMiddleware(
@@ -166,8 +178,8 @@ func TestHeaderMiddleware(t *testing.T) {
 		"There's token in the header",
 		headerTest(
 			"test_username", &conf, http.StatusOK,
-			User{"test_username", []mid.Error(nil)}, 2*time.Hour,
-			&handler,
+			User{UserBase{"test_username", []mid.Error(nil)}},
+			2*time.Hour, &handler,
 		),
 	)
 	t.Run(
@@ -217,7 +229,7 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 		"session", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
-			return User{username, []mid.Error{}}, nil
+			return User{UserBase{username, []mid.Error{}}}, nil
 		}, &conf,
 	)(handlerFunc)
 	errorHandler := mid.CookieMiddleware(
@@ -227,12 +239,19 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 			return nil, errors.New("Error Test")
 		}, &conf,
 	)(handlerFunc)
+	customUserHandler := mid.CookieMiddleware(
+		"session", con,
+		func(fcon interface{}, username string) (interface{}, error) {
+			assert.Equal(t, con, fcon)
+			return UserBase{username, []mid.Error{}}, nil
+		}, &conf,
+	)(handlerFunc)
 
 	t.Run(
 		"There's token in the cookie",
 		cookieTest(
 			"test_username", "session", &conf,
-			http.StatusOK, User{"test_username", []mid.Error(nil)},
+			http.StatusOK, User{UserBase{"test_username", []mid.Error(nil)}},
 			2*time.Hour, &handler, true,
 		),
 	)
@@ -269,6 +288,14 @@ func TestCookieHandlerMiddleware(t *testing.T) {
 			http.StatusOK,
 			User{}, 2*time.Hour,
 			&errorHandler, false,
+		),
+	)
+	t.Run(
+		"The user is CustomUser",
+		cookieTest(
+			"test_username", "session", &conf,
+			http.StatusOK, UserBase{"test_username", []mid.Error(nil)},
+			2*time.Hour, &customUserHandler, false,
 		),
 	)
 	t.Run(
