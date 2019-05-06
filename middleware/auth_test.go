@@ -38,36 +38,33 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	t.Run(
 		"There's token in the header",
 		headerTest(
-			"test_username", &conf, http.StatusOK,
-			User{UserBase{"test_username", []mid.Error(nil)}}, 2*time.Hour,
-			&handler,
+			"test_username", "Authorization", &conf, http.StatusOK,
+			User{UserBase{"test_username", []mid.Error(nil)}},
+			2*time.Hour, &handler, true,
 		),
 	)
 	t.Run(
 		"Empty ID in the header",
 		headerTest(
-			"", &conf, http.StatusUnauthorized,
+			"", "Authorization", &conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
-			2*time.Hour,
-			&handler,
+			2*time.Hour, &handler, false,
 		),
 	)
 	t.Run(
 		"There's expired token in the header",
 		headerTest(
-			"test_username", &conf, http.StatusUnauthorized,
+			"test_username", "Authorization", &conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
-			-2*time.Hour,
-			&handler,
+			-2*time.Hour, &handler, false,
 		),
 	)
 	t.Run(
 		"findUserFunc returns an error",
 		headerTest(
-			"test_username", &conf, http.StatusUnauthorized,
+			"test_username", "Authorization", &conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
-			2*time.Hour,
-			&errorHandler,
+			2*time.Hour, &errorHandler, false,
 		),
 	)
 	t.Run(
@@ -75,8 +72,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 		cookieTest(
 			"test_username", "session", &conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
-			2*time.Hour,
-			&handler, false,
+			2*time.Hour, &handler, false,
 		),
 	)
 }
@@ -153,10 +149,10 @@ func TestCookieLoginRequiredMiddleware(t *testing.T) {
 	t.Run(
 		"There's token in the header, but cookie middleware shouldn't recognize it.",
 		headerTest(
-			"test_username", &conf,
+			"test_username", "Authorization", &conf,
 			http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
-			2*time.Hour, &handler,
+			2*time.Hour, &handler, false,
 		),
 	)
 }
