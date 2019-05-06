@@ -14,31 +14,33 @@ import (
 
 func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	con := &Con{}
-	conf := _conf.Config{
-		Signer:   jwt.NewHS256("test"),
-		Audience: "Test Audience",
-		Issuer:   "Test Issuer",
-		Subject:  "Test Subject",
-	}
+	conf, err := _conf.New(
+		jwt.NewHS256("test"),
+		"Test Audience",
+		"Test Issuer",
+		"Test Subject",
+		3600*time.Hour,
+	)
+	assert.NilError(t, err)
 	handler := mid.HeaderLoginRequired(
 		"Authorization", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
 			return User{UserBase{username, []mid.Error{}}}, nil
-		}, &conf,
+		}, conf,
 	)(handlerFunc)
 	errorHandler := mid.HeaderLoginRequired(
 		"Authorization", con,
 		func(fcon interface{}, username string) (interface{}, error) {
 			assert.Equal(t, con, fcon)
 			return nil, errors.New("Error Test")
-		}, &conf,
+		}, conf,
 	)(handlerFunc)
 
 	t.Run(
 		"There's token in the header",
 		headerTest(
-			"test_username", "Authorization", &conf, http.StatusOK,
+			"test_username", "Authorization", conf, http.StatusOK,
 			User{UserBase{"test_username", []mid.Error(nil)}},
 			2*time.Hour, &handler, true,
 		),
@@ -46,7 +48,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	t.Run(
 		"Empty ID in the header",
 		headerTest(
-			"", "Authorization", &conf, http.StatusUnauthorized,
+			"", "Authorization", conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
 			2*time.Hour, &handler, false,
 		),
@@ -54,7 +56,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	t.Run(
 		"There's expired token in the header",
 		headerTest(
-			"test_username", "Authorization", &conf, http.StatusUnauthorized,
+			"test_username", "Authorization", conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
 			-2*time.Hour, &handler, false,
 		),
@@ -62,7 +64,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	t.Run(
 		"findUserFunc returns an error",
 		headerTest(
-			"test_username", "Authorization", &conf, http.StatusUnauthorized,
+			"test_username", "Authorization", conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
 			2*time.Hour, &errorHandler, false,
 		),
@@ -70,7 +72,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	t.Run(
 		"There's token in cookie, but header middleware shouldn't recognize it.",
 		cookieTest(
-			"test_username", "session", &conf, http.StatusUnauthorized,
+			"test_username", "session", conf, http.StatusUnauthorized,
 			User{UserBase{Errors: []mid.Error{mid.Error{"Not Authorized."}}}},
 			2*time.Hour, &handler, false,
 		),

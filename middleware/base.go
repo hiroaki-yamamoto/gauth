@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -34,6 +35,18 @@ func processError(
 	next.ServeHTTP(w, r)
 }
 
+func tokenizeUser(
+	u interface{},
+	w http.ResponseWriter,
+	config *_conf.Config,
+) ([]byte, error) {
+	respUser, ok := u.(models.IUser)
+	if !ok {
+		return nil, errors.New("Authorized user not detected")
+	}
+	return core.ComposeID(respUser.GetID(), config)
+}
+
 func cookieMiddlewareBase(
 	cookieName string,
 	con interface{},
@@ -53,23 +66,15 @@ func cookieMiddlewareBase(
 				processError(w, r, next, err, failOnError)
 				return
 			}
-			defer func(u interface{}, w http.ResponseWriter) {
-				respUser, ok := u.(models.IUser)
-				if !ok {
-					log.Print("Authorized user not detected.")
-					return
-				}
-				tok, err := core.ComposeID(respUser.GetID(), config)
-				if err != nil {
-					log.Print("Composing token failed: ", err)
-					return
-				}
+			if tok, err := tokenizeUser(user, w, config); err == nil {
 				http.SetCookie(w, &http.Cookie{
 					Name:    cookieName,
 					Value:   string(tok),
 					Expires: Clock.Now().Add(config.ExpireIn),
 				})
-			}(user, w)
+			} else {
+				log.Print("Composing token failed: ", err)
+			}
 			next.ServeHTTP(w, SetUser(r, user))
 		})
 	}
@@ -90,6 +95,13 @@ func headerMiddlewareBase(
 				processError(w, r, next, err, failOnError)
 				return
 			}
+
+			if tok, err := tokenizeUser(user, w, config); err == nil {
+				w.Header().Set("X-"+headerName, string(tok))
+			} else {
+				log.Print("Composing token failed: ", err)
+			}
+
 			next.ServeHTTP(w, SetUser(r, user))
 		})
 	}

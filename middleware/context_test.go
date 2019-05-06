@@ -106,10 +106,10 @@ func cookieTest(
 		resUser := UserBase{}
 		err = json.NewDecoder(rec.Body).Decode(&resUser)
 		assert.NilError(t, err)
+		assert.Equal(t, rec.Code, code)
 
 		expUser, ok := user.(User)
 		if ok {
-			assert.Equal(t, rec.Code, code)
 			assert.Equal(t, resUser.Username, expUser.UserBase.Username)
 			assert.DeepEqual(t, resUser.Errors, expUser.UserBase.Errors)
 		} else {
@@ -124,12 +124,13 @@ func headerTest(
 	headerName string,
 	conf *_conf.Config,
 	code int,
-	user User,
+	user interface{},
 	expdiff time.Duration,
 	srvHandler *http.Handler,
 	autoExtend bool,
 ) func(t *testing.T) {
-	now := time.Now().UTC()
+	mid.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
+	now := mid.Clock.Now()
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		rec := httptest.NewRecorder()
@@ -146,11 +147,18 @@ func headerTest(
 		req.Header.Add(headerName, string(token))
 		(*srvHandler).ServeHTTP(rec, req)
 
-		resUser := User{}
+		resUser := UserBase{}
 		err = json.NewDecoder(rec.Body).Decode(&resUser)
 		assert.NilError(t, err)
 		assert.Equal(t, rec.Code, code)
-		assert.DeepEqual(t, resUser, user)
+		expUser, ok := user.(User)
+		if ok {
+			assert.Equal(t, resUser.Username, expUser.UserBase.Username)
+			assert.DeepEqual(t, resUser.Errors, expUser.UserBase.Errors)
+		} else {
+			expUser := user.(UserBase)
+			assert.DeepEqual(t, resUser, expUser)
+		}
 
 		hdrTokStr := rec.Header().Get("X-" + headerName)
 		if autoExtend {
@@ -191,6 +199,13 @@ func TestHeaderMiddleware(t *testing.T) {
 			return nil, errors.New("Error Test")
 		}, conf,
 	)(handlerFunc)
+	customUserHandler := mid.HeaderMiddleware(
+		"Authorization", con,
+		func(fcon interface{}, username string) (interface{}, error) {
+			assert.Equal(t, con, fcon)
+			return UserBase{username, []mid.Error{}}, nil
+		}, conf,
+	)(handlerFunc)
 
 	t.Run(
 		"There's token in the header",
@@ -212,6 +227,14 @@ func TestHeaderMiddleware(t *testing.T) {
 		headerTest(
 			"test_username", "Authorization", conf, http.StatusOK,
 			User{}, -2*time.Hour, &handler, false,
+		),
+	)
+	t.Run(
+		"The user is CustomUser",
+		headerTest(
+			"test_username", "Authorization", conf,
+			http.StatusOK, UserBase{"test_username", []mid.Error(nil)},
+			2*time.Hour, &customUserHandler, false,
 		),
 	)
 	t.Run(
