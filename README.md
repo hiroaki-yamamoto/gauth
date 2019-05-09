@@ -40,9 +40,11 @@ This package has 2 modules:
 
 ### Using Token Composer and Decoder
 
-I'm trying to write an example. but there's too many code to write here...
+Please visit [go-gql-sample] for example. On `backend/main.go`, the handlers
+are wrapped with `HeaderMiddleware` and `HeaderLoginRequired`. In addition to
+this, `backend/prv/resolver.go` shows the example of `GetUser`.
 
-Sooooo.... please be patient 👍
+[go-gql-sample]: https://github.com/hiroaki-yamamoto/go-gql-sample
 
 ### Contirbution
 Writing a PR or Issue is appreciated when you found a bug, or you want to share
