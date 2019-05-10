@@ -9,6 +9,9 @@ import (
 
 // Config is configuration model for ExtractToken
 type Config struct {
+	// The name of the session. This is used as the name of the header when
+	// HeaderMiddleware / HeaderLoginRequired is used, and as the name of the
+	// cookie when CookieMiddleware / CookieLoginRequired is used.
 	SessionName               string
 	Signer                    jwt.Signer
 	Audience, Issuer, Subject string
@@ -18,6 +21,7 @@ type Config struct {
 // New creates a new Config class safely.
 // Note: If rxpireIn is 0, 3600 * time.Minute is used as a default-value.
 func New(
+	// Refer the comment of Config.SessionName.
 	sessionName string,
 	signer jwt.Signer,
 	audience, issuer, subject string,
