@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/hiroaki-yamamoto/gauth/config"
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
 	"github.com/hiroaki-yamamoto/gauth/models"
@@ -103,4 +104,16 @@ func headerMiddlewareBase(
 			next.ServeHTTP(w, SetUser(r, user))
 		})
 	}
+}
+
+func middlewareBase(
+	con interface{},
+	findUserFunc FindUser,
+	conf *config.Config,
+	failOnError bool,
+) func(http.Handler) http.Handler {
+	if conf.MiddlewareType == config.Header {
+		return headerMiddlewareBase(con, findUserFunc, conf, failOnError)
+	}
+	return cookieMiddlewareBase(con, findUserFunc, conf, failOnError)
 }

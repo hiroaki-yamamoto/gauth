@@ -192,6 +192,7 @@ func deployHeaderTest(
 	con := &Con{}
 	conf, err := _conf.New(
 		"Authorization",
+		_conf.Header,
 		jwt.NewHS256("test"),
 		"Test Audience",
 		"Test Issuer",
@@ -283,6 +284,7 @@ func deployCookieTest(
 	con := &Con{}
 	conf, err := _conf.New(
 		"session",
+		_conf.Cookie,
 		jwt.NewHS256("test"),
 		"Test Audience",
 		"Test Issuer",
@@ -370,7 +372,7 @@ func deployCookieTest(
 func TestHeaderMiddleware(t *testing.T) {
 	deployHeaderTest(
 		t,
-		mid.HeaderMiddleware,
+		mid.ContextMiddleware,
 		http.StatusOK,
 		http.StatusOK,
 		[]mid.Error(nil),
@@ -380,7 +382,7 @@ func TestHeaderMiddleware(t *testing.T) {
 func TestCookieHandlerMiddleware(t *testing.T) {
 	deployCookieTest(
 		t,
-		mid.CookieMiddleware,
+		mid.ContextMiddleware,
 		http.StatusOK,
 		http.StatusOK,
 		[]mid.Error(nil),

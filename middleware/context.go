@@ -28,22 +28,12 @@ func SetUser(
 	return r.WithContext(context.WithValue(r.Context(), userCtxKey, user))
 }
 
-// HeaderMiddleware reads JWT from http header and
-// puts the found user to the context.
-func HeaderMiddleware(
+// ContextMiddleware adds the authenticated user to http.Request.Context.
+// if there's the token in the specified header / cookie in config.
+func ContextMiddleware(
 	con interface{},
 	findUserFunc FindUser,
 	config *_conf.Config,
 ) func(http.Handler) http.Handler {
-	return headerMiddlewareBase(con, findUserFunc, config, false)
-}
-
-// CookieMiddleware reads JWT from cookie and
-// puts the found user to the context.
-func CookieMiddleware(
-	con interface{},
-	findUserFunc FindUser,
-	config *_conf.Config,
-) func(http.Handler) http.Handler {
-	return cookieMiddlewareBase(con, findUserFunc, config, false)
+	return middlewareBase(con, findUserFunc, config, false)
 }

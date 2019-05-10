@@ -8,26 +8,12 @@ import (
 
 // Authentication required (or not) middleware
 
-// HeaderLoginRequired enforces jwt-login authentication at
-// the specified header.
-//
-// Note that this middleware calls HeaderMiddleware implicitly.
-func HeaderLoginRequired(
+// LoginRequired enforces user authentication. If the user is not authenticated,
+// it returns 401 (Not Authenticated).
+func LoginRequired(
 	con interface{},
 	findUserFunc FindUser,
-	config *config.Config,
+	conf *config.Config,
 ) func(http.Handler) http.Handler {
-	return headerMiddlewareBase(con, findUserFunc, config, true)
-}
-
-// CookieLoginRequired enforces jwt-login authentication at
-// the specified cookie.
-//
-// Note that this middleware calls CookieMiddleware implicitly.
-func CookieLoginRequired(
-	con interface{},
-	findUserFunc FindUser,
-	config *config.Config,
-) func(http.Handler) http.Handler {
-	return cookieMiddlewareBase(con, findUserFunc, config, true)
+	return middlewareBase(con, findUserFunc, conf, true)
 }

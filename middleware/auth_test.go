@@ -10,7 +10,7 @@ import (
 func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 	deployHeaderTest(
 		t,
-		mid.HeaderLoginRequired,
+		mid.LoginRequired,
 		http.StatusOK,
 		http.StatusUnauthorized,
 		[]mid.Error{
@@ -22,7 +22,7 @@ func TestHeaderLoginRequriedMiddleware(t *testing.T) {
 func TestCookieLoginRequiredMiddleware(t *testing.T) {
 	deployCookieTest(
 		t,
-		mid.CookieLoginRequired,
+		mid.LoginRequired,
 		http.StatusOK,
 		http.StatusUnauthorized,
 		[]mid.Error{
