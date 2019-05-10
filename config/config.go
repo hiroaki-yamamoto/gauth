@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/gbrlsnchs/jwt"
@@ -27,6 +28,17 @@ type Config struct {
 	Signer                    jwt.Signer
 	Audience, Issuer, Subject string
 	ExpireIn                  time.Duration
+
+	CookieConfig
+}
+
+// CookieConfig is used by Login function in the case of using cookie
+// for session management.
+type CookieConfig struct {
+	Path, Domain string
+	Secure       bool // <- Set true when using https.
+	HTTPOnly     bool // <- Set false/zero-value when using with XHR.
+	SameSite     http.SameSite
 }
 
 // New creates a new Config class safely.
@@ -38,6 +50,7 @@ func New(
 	signer jwt.Signer,
 	audience, issuer, subject string,
 	expireIn time.Duration,
+	cookieConf CookieConfig,
 ) (*Config, error) {
 	if expireIn < 0 {
 		return nil, errors.New(
@@ -48,12 +61,13 @@ func New(
 		expireIn = 3600 * time.Minute
 	}
 	return &Config{
-		sessionName,
-		middlewareType,
-		signer,
-		audience,
-		issuer,
-		subject,
-		expireIn,
+		SessionName:    sessionName,
+		MiddlewareType: middlewareType,
+		Signer:         signer,
+		Audience:       audience,
+		Issuer:         issuer,
+		Subject:        subject,
+		ExpireIn:       expireIn,
+		CookieConfig:   cookieConf,
 	}, nil
 }

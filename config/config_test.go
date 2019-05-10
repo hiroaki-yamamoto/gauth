@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -15,6 +16,9 @@ import (
 // Config Test
 
 func TestConfigNew(t *testing.T) {
+	cookieConfig := _conf.CookieConfig{
+		"/", "localhost", false, true, http.SameSiteLaxMode,
+	}
 	config := &_conf.Config{
 		"session",
 		_conf.Header,
@@ -23,6 +27,7 @@ func TestConfigNew(t *testing.T) {
 		"test issuer",
 		"test subject",
 		2 * time.Hour,
+		cookieConfig,
 	}
 	newConfig, err := _conf.New(
 		config.SessionName,
@@ -32,6 +37,7 @@ func TestConfigNew(t *testing.T) {
 		config.Issuer,
 		config.Subject,
 		config.ExpireIn,
+		config.CookieConfig,
 	)
 	assert.NilError(t, err)
 	assert.DeepEqual(
@@ -41,6 +47,9 @@ func TestConfigNew(t *testing.T) {
 }
 
 func TestConfigNewWithNegExp(t *testing.T) {
+	cookieConfig := _conf.CookieConfig{
+		"/", "localhost", false, true, http.SameSiteLaxMode,
+	}
 	config, err := _conf.New(
 		"session",
 		_conf.Header,
@@ -49,12 +58,16 @@ func TestConfigNewWithNegExp(t *testing.T) {
 		"test issuer",
 		"test subject",
 		-9*time.Hour,
+		cookieConfig,
 	)
 	assert.Error(t, err, "expireIn must be 0-included positive time.Duration")
 	assert.Assert(t, cmp.Nil(config))
 }
 
 func TestConfigNewWithZeroExp(t *testing.T) {
+	cookieConfig := _conf.CookieConfig{
+		"/", "localhost", false, true, http.SameSiteLaxMode,
+	}
 	config := &_conf.Config{
 		SessionName:    "session",
 		MiddlewareType: _conf.Header,
@@ -62,6 +75,7 @@ func TestConfigNewWithZeroExp(t *testing.T) {
 		Audience:       "test audience",
 		Issuer:         "test issuer",
 		Subject:        "test subject",
+		CookieConfig:   cookieConfig,
 	}
 	newConfig, err := _conf.New(
 		config.SessionName,
@@ -71,6 +85,7 @@ func TestConfigNewWithZeroExp(t *testing.T) {
 		config.Issuer,
 		config.Subject,
 		config.ExpireIn,
+		config.CookieConfig,
 	)
 	assert.NilError(t, err)
 	assert.DeepEqual(

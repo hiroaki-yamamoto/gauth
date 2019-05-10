@@ -13,6 +13,7 @@ import (
 	"github.com/gbrlsnchs/jwt"
 	"gotest.tools/assert"
 
+	"github.com/hiroaki-yamamoto/gauth/clock"
 	"github.com/hiroaki-yamamoto/gauth/config"
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
@@ -67,8 +68,8 @@ func cookieTest(
 	srvHandler *http.Handler,
 	autoExtend bool,
 ) func(t *testing.T) {
-	mid.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
-	now := mid.Clock.Now()
+	clock.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
+	now := clock.Clock.Now()
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		rec := httptest.NewRecorder()
@@ -104,7 +105,7 @@ func cookieTest(
 			assert.Equal(
 				t,
 				time.Unix(tok.ExpirationTime, 0),
-				mid.Clock.Now().Add(3600*time.Hour),
+				clock.Clock.Now().Add(3600*time.Hour),
 			)
 		} else {
 			assert.Assert(t, session == nil)
@@ -136,8 +137,8 @@ func headerTest(
 	srvHandler *http.Handler,
 	autoExtend bool,
 ) func(t *testing.T) {
-	mid.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
-	now := mid.Clock.Now()
+	clock.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
+	now := clock.Clock.Now()
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		rec := httptest.NewRecorder()
@@ -174,7 +175,7 @@ func headerTest(
 			assert.Equal(
 				t,
 				time.Unix(hdrTok.ExpirationTime, 0),
-				mid.Clock.Now().Add(3600*time.Hour),
+				clock.Clock.Now().Add(3600*time.Hour),
 			)
 			return
 		}
@@ -198,6 +199,9 @@ func deployHeaderTest(
 		"Test Issuer",
 		"Test Subject",
 		3600*time.Hour,
+		_conf.CookieConfig{
+			"/", "localhost", false, true, http.SameSiteLaxMode,
+		},
 	)
 	assert.NilError(t, err)
 	handler := middleware(
@@ -290,6 +294,9 @@ func deployCookieTest(
 		"Test Issuer",
 		"Test Subject",
 		3600*time.Hour,
+		_conf.CookieConfig{
+			"/", "localhost", false, true, http.SameSiteLaxMode,
+		},
 	)
 	assert.NilError(t, err)
 	handler := middleware(

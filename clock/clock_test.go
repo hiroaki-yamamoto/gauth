@@ -1,16 +1,16 @@
-package middleware_test
+package clock_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/hiroaki-yamamoto/gauth/middleware"
+	"github.com/hiroaki-yamamoto/gauth/clock"
 	"gotest.tools/assert"
 )
 
 // Clock test
 
 func TestNow(t *testing.T) {
-	clock := middleware.DefaultTime{}
+	clock := clock.DefaultTime{}
 	assert.Equal(t, clock.Now().Unix(), time.Now().UTC().Unix())
 }

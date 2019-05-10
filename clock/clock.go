@@ -1,4 +1,4 @@
-package middleware
+package clock
 
 // Clock interface, structure, and instance
 

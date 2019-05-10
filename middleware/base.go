@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/hiroaki-yamamoto/gauth/clock"
 	"github.com/hiroaki-yamamoto/gauth/config"
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
@@ -70,7 +71,7 @@ func cookieMiddlewareBase(
 				http.SetCookie(w, &http.Cookie{
 					Name:    config.SessionName,
 					Value:   string(tok),
-					Expires: Clock.Now().Add(config.ExpireIn),
+					Expires: clock.Clock.Now().Add(config.ExpireIn),
 				})
 			} else {
 				log.Print("Composing token failed: ", err)
