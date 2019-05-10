@@ -191,6 +191,13 @@ func deployHeaderTest(
 	wrongMsgs []mid.Error,
 ) {
 	con := &Con{}
+	cookieConf := _conf.CookieConfig{
+		Path:     "/",
+		Domain:   "localhost",
+		Secure:   false,
+		HTTPOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
 	conf, err := _conf.New(
 		"Authorization",
 		_conf.Header,
@@ -199,9 +206,7 @@ func deployHeaderTest(
 		"Test Issuer",
 		"Test Subject",
 		3600*time.Hour,
-		_conf.CookieConfig{
-			"/", "localhost", false, true, http.SameSiteLaxMode,
-		},
+		cookieConf,
 	)
 	assert.NilError(t, err)
 	handler := middleware(
@@ -286,6 +291,13 @@ func deployCookieTest(
 	wrongMsgs []mid.Error,
 ) {
 	con := &Con{}
+	cookieConf := _conf.CookieConfig{
+		Path:     "/",
+		Domain:   "localhost",
+		Secure:   false,
+		HTTPOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
 	conf, err := _conf.New(
 		"session",
 		_conf.Cookie,
@@ -294,9 +306,7 @@ func deployCookieTest(
 		"Test Issuer",
 		"Test Subject",
 		3600*time.Hour,
-		_conf.CookieConfig{
-			"/", "localhost", false, true, http.SameSiteLaxMode,
-		},
+		cookieConf,
 	)
 	assert.NilError(t, err)
 	handler := middleware(

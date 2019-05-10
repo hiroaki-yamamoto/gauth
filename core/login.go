@@ -20,7 +20,7 @@ func Login(
 		return err
 	}
 	if conf.MiddlewareType == config.Header {
-		w.Header().Add(conf.SessionName, string(token))
+		w.Header().Add("X-"+conf.SessionName, string(token))
 		return nil
 	}
 	http.SetCookie(w, &http.Cookie{
