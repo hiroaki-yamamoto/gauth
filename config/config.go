@@ -20,6 +20,7 @@ const (
 
 // Config is configuration model for ExtractToken
 type Config struct {
+	CookieConfig
 	// The name of the session. This is used as the name of the header when
 	// HeaderMiddleware / HeaderLoginRequired is used, and as the name of the
 	// cookie when CookieMiddleware / CookieLoginRequired is used.
@@ -28,8 +29,6 @@ type Config struct {
 	Signer                    jwt.Signer
 	Audience, Issuer, Subject string
 	ExpireIn                  time.Duration
-
-	CookieConfig
 }
 
 // CookieConfig is used by Login function in the case of using cookie
@@ -61,13 +60,9 @@ func New(
 		expireIn = 3600 * time.Minute
 	}
 	return &Config{
-		SessionName:    sessionName,
-		MiddlewareType: middlewareType,
-		Signer:         signer,
-		Audience:       audience,
-		Issuer:         issuer,
-		Subject:        subject,
-		ExpireIn:       expireIn,
-		CookieConfig:   cookieConf,
+		cookieConf, sessionName,
+		middlewareType, signer,
+		audience, issuer,
+		subject, expireIn,
 	}, nil
 }

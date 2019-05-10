@@ -20,6 +20,7 @@ func TestConfigNew(t *testing.T) {
 		"/", "localhost", false, true, http.SameSiteLaxMode,
 	}
 	config := &_conf.Config{
+		cookieConfig,
 		"session",
 		_conf.Header,
 		jwt.NewHS256("test"),
@@ -27,7 +28,6 @@ func TestConfigNew(t *testing.T) {
 		"test issuer",
 		"test subject",
 		2 * time.Hour,
-		cookieConfig,
 	}
 	newConfig, err := _conf.New(
 		config.SessionName,

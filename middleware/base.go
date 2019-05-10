@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/hiroaki-yamamoto/gauth/clock"
 	"github.com/hiroaki-yamamoto/gauth/config"
@@ -69,9 +70,15 @@ func cookieMiddlewareBase(
 			}
 			if tok, err := tokenizeUser(user, w, config); err == nil {
 				http.SetCookie(w, &http.Cookie{
-					Name:    config.SessionName,
-					Value:   string(tok),
-					Expires: clock.Clock.Now().Add(config.ExpireIn),
+					Name:     config.SessionName,
+					Value:    string(tok),
+					Path:     config.Path,
+					Domain:   config.Domain,
+					Expires:  clock.Clock.Now().Add(config.ExpireIn),
+					MaxAge:   int(config.ExpireIn / time.Second),
+					Secure:   config.Secure,
+					HttpOnly: config.HTTPOnly,
+					SameSite: config.SameSite,
 				})
 			} else {
 				log.Print("Composing token failed: ", err)
