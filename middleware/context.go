@@ -31,21 +31,19 @@ func SetUser(
 // HeaderMiddleware reads JWT from http header and
 // puts the found user to the context.
 func HeaderMiddleware(
-	headerName string,
 	con interface{},
 	findUserFunc FindUser,
 	config *_conf.Config,
 ) func(http.Handler) http.Handler {
-	return headerMiddlewareBase(headerName, con, findUserFunc, config, false)
+	return headerMiddlewareBase(con, findUserFunc, config, false)
 }
 
 // CookieMiddleware reads JWT from cookie and
 // puts the found user to the context.
 func CookieMiddleware(
-	cookieName string,
 	con interface{},
 	findUserFunc FindUser,
 	config *_conf.Config,
 ) func(http.Handler) http.Handler {
-	return cookieMiddlewareBase(cookieName, con, findUserFunc, config, false)
+	return cookieMiddlewareBase(con, findUserFunc, config, false)
 }

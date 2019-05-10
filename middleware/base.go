@@ -48,7 +48,6 @@ func tokenizeUser(
 }
 
 func cookieMiddlewareBase(
-	cookieName string,
 	con interface{},
 	findUserFunc FindUser,
 	config *_conf.Config,
@@ -56,7 +55,7 @@ func cookieMiddlewareBase(
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c, err := r.Cookie(cookieName)
+			c, err := r.Cookie(config.SessionName)
 			if err != nil {
 				processError(w, r, next, err, failOnError)
 				return
@@ -68,7 +67,7 @@ func cookieMiddlewareBase(
 			}
 			if tok, err := tokenizeUser(user, w, config); err == nil {
 				http.SetCookie(w, &http.Cookie{
-					Name:    cookieName,
+					Name:    config.SessionName,
 					Value:   string(tok),
 					Expires: Clock.Now().Add(config.ExpireIn),
 				})
@@ -81,7 +80,6 @@ func cookieMiddlewareBase(
 }
 
 func headerMiddlewareBase(
-	headerName string,
 	con interface{},
 	findUserFunc FindUser,
 	config *_conf.Config,
@@ -89,7 +87,7 @@ func headerMiddlewareBase(
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c := r.Header.Get(headerName)
+			c := r.Header.Get(config.SessionName)
 			user, err := JwtToUser(c, findUserFunc, con, config)
 			if err != nil {
 				processError(w, r, next, err, failOnError)
@@ -97,7 +95,7 @@ func headerMiddlewareBase(
 			}
 
 			if tok, err := tokenizeUser(user, w, config); err == nil {
-				w.Header().Set("X-"+headerName, string(tok))
+				w.Header().Set("X-"+config.SessionName, string(tok))
 			} else {
 				log.Print("Composing token failed: ", err)
 			}

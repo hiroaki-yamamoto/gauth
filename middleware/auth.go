@@ -13,12 +13,11 @@ import (
 //
 // Note that this middleware calls HeaderMiddleware implicitly.
 func HeaderLoginRequired(
-	headerName string,
 	con interface{},
 	findUserFunc FindUser,
 	config *config.Config,
 ) func(http.Handler) http.Handler {
-	return headerMiddlewareBase(headerName, con, findUserFunc, config, true)
+	return headerMiddlewareBase(con, findUserFunc, config, true)
 }
 
 // CookieLoginRequired enforces jwt-login authentication at
@@ -26,10 +25,9 @@ func HeaderLoginRequired(
 //
 // Note that this middleware calls CookieMiddleware implicitly.
 func CookieLoginRequired(
-	cookieName string,
 	con interface{},
 	findUserFunc FindUser,
 	config *config.Config,
 ) func(http.Handler) http.Handler {
-	return cookieMiddlewareBase(cookieName, con, findUserFunc, config, true)
+	return cookieMiddlewareBase(con, findUserFunc, config, true)
 }

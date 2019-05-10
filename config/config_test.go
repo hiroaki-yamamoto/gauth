@@ -16,6 +16,7 @@ import (
 
 func TestConfigNew(t *testing.T) {
 	config := &_conf.Config{
+		"session",
 		jwt.NewHS256("test"),
 		"test audience",
 		"test issuer",
@@ -23,6 +24,7 @@ func TestConfigNew(t *testing.T) {
 		2 * time.Hour,
 	}
 	newConfig, err := _conf.New(
+		config.SessionName,
 		config.Signer,
 		config.Audience,
 		config.Issuer,
@@ -38,6 +40,7 @@ func TestConfigNew(t *testing.T) {
 
 func TestConfigNewWithNegExp(t *testing.T) {
 	config, err := _conf.New(
+		"session",
 		jwt.NewHS256("test"),
 		"test audience",
 		"test issuer",
@@ -50,12 +53,14 @@ func TestConfigNewWithNegExp(t *testing.T) {
 
 func TestConfigNewWithZeroExp(t *testing.T) {
 	config := &_conf.Config{
-		Signer:   jwt.NewHS256("test"),
-		Audience: "test audience",
-		Issuer:   "test issuer",
-		Subject:  "test subject",
+		SessionName: "session",
+		Signer:      jwt.NewHS256("test"),
+		Audience:    "test audience",
+		Issuer:      "test issuer",
+		Subject:     "test subject",
 	}
 	newConfig, err := _conf.New(
+		config.SessionName,
 		config.Signer,
 		config.Audience,
 		config.Issuer,

@@ -9,6 +9,7 @@ import (
 
 // Config is configuration model for ExtractToken
 type Config struct {
+	SessionName               string
 	Signer                    jwt.Signer
 	Audience, Issuer, Subject string
 	ExpireIn                  time.Duration
@@ -17,6 +18,7 @@ type Config struct {
 // New creates a new Config class safely.
 // Note: If rxpireIn is 0, 3600 * time.Minute is used as a default-value.
 func New(
+	sessionName string,
 	signer jwt.Signer,
 	audience, issuer, subject string,
 	expireIn time.Duration,
@@ -29,5 +31,5 @@ func New(
 	if expireIn == 0 {
 		expireIn = 3600 * time.Minute
 	}
-	return &Config{signer, audience, issuer, subject, expireIn}, nil
+	return &Config{sessionName, signer, audience, issuer, subject, expireIn}, nil
 }
