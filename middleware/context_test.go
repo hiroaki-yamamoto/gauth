@@ -68,7 +68,7 @@ func cookieTest(
 	srvHandler *http.Handler,
 	autoExtend bool,
 ) func(t *testing.T) {
-	clock.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
+	clock.Clock = TimeMock{time.Unix(time.Now().Unix(), 0).UTC()}
 	now := clock.Clock.Now()
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
@@ -89,22 +89,28 @@ func cookieTest(
 		})
 		(*srvHandler).ServeHTTP(rec, req)
 
-		cookie := rec.Header().Get("Set-Cookie")
-		header := http.Header{}
-		header.Add("Cookie", cookie)
-		session, err := (&http.Request{Header: header}).Cookie(conf.SessionName)
-		if autoExtend {
-			assert.NilError(t, err)
-		} else {
-			assert.Error(t, err, "http: named cookie not present")
+		var session *http.Cookie
+		for _, cookie := range rec.Result().Cookies() {
+			if cookie.Name == conf.SessionName {
+				session = cookie
+				break
+			}
 		}
 
 		if autoExtend && session != nil {
+			assert.Equal(t, session.Path, conf.Path)
+			assert.Equal(t, session.Domain, conf.Domain)
+			assert.Equal(t, session.Expires, now.Add(conf.ExpireIn))
+			assert.Equal(t, session.MaxAge, int(conf.ExpireIn/time.Second))
+			assert.Equal(t, session.Secure, conf.Secure)
+			assert.Equal(t, session.HttpOnly, conf.HTTPOnly)
+			assert.Equal(t, session.SameSite, conf.SameSite)
+
 			tok, err := core.ExtractToken(session.Value, conf)
 			assert.NilError(t, err)
 			assert.Equal(
 				t,
-				time.Unix(tok.ExpirationTime, 0),
+				time.Unix(tok.ExpirationTime, 0).UTC(),
 				clock.Clock.Now().Add(3600*time.Hour),
 			)
 		} else {
@@ -137,7 +143,7 @@ func headerTest(
 	srvHandler *http.Handler,
 	autoExtend bool,
 ) func(t *testing.T) {
-	clock.Clock = TimeMock{time.Unix(time.Now().UTC().Unix(), 0)}
+	clock.Clock = TimeMock{time.Unix(time.Now().Unix(), 0).UTC()}
 	now := clock.Clock.Now()
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
@@ -174,7 +180,7 @@ func headerTest(
 			assert.NilError(t, err)
 			assert.Equal(
 				t,
-				time.Unix(hdrTok.ExpirationTime, 0),
+				time.Unix(hdrTok.ExpirationTime, 0).UTC(),
 				clock.Clock.Now().Add(3600*time.Hour),
 			)
 			return
