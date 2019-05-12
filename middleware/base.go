@@ -2,12 +2,9 @@ package middleware
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
-	"time"
 
-	"github.com/hiroaki-yamamoto/gauth/clock"
 	"github.com/hiroaki-yamamoto/gauth/config"
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
@@ -38,18 +35,6 @@ func processError(
 	next.ServeHTTP(w, r)
 }
 
-func tokenizeUser(
-	u interface{},
-	w http.ResponseWriter,
-	config *_conf.Config,
-) ([]byte, error) {
-	respUser, ok := u.(models.IUser)
-	if !ok {
-		return nil, errors.New("Authorized user not detected")
-	}
-	return core.ComposeID(respUser.GetID(), config)
-}
-
 func cookieMiddlewareBase(
 	con interface{},
 	findUserFunc FindUser,
@@ -68,20 +53,13 @@ func cookieMiddlewareBase(
 				processError(w, r, next, err, failOnError)
 				return
 			}
-			if tok, err := tokenizeUser(user, w, config); err == nil {
-				http.SetCookie(w, &http.Cookie{
-					Name:     config.SessionName,
-					Value:    string(tok),
-					Path:     config.Path,
-					Domain:   config.Domain,
-					Expires:  clock.Clock.Now().Add(config.ExpireIn),
-					MaxAge:   int(config.ExpireIn / time.Second),
-					Secure:   config.Secure,
-					HttpOnly: config.HTTPOnly,
-					SameSite: config.SameSite,
-				})
+			iuser, ok := user.(models.IUser)
+			if ok {
+				core.Login(w, config, iuser)
+				// There's nothing errors in this case. Therefore, no need to
+				// check whether the error is nil or not.
 			} else {
-				log.Print("Composing token failed: ", err)
+				log.Println("Authorized user not detected")
 			}
 			next.ServeHTTP(w, SetUser(r, user))
 		})
@@ -103,10 +81,13 @@ func headerMiddlewareBase(
 				return
 			}
 
-			if tok, err := tokenizeUser(user, w, config); err == nil {
-				w.Header().Set("X-"+config.SessionName, string(tok))
+			iuser, ok := user.(models.IUser)
+			if ok {
+				core.Login(w, config, iuser)
+				// There's nothing errors in this case. Therefore, no need to
+				// check whether the error is nil or not.
 			} else {
-				log.Print("Composing token failed: ", err)
+				log.Println("Authorized user not detected")
 			}
 
 			next.ServeHTTP(w, SetUser(r, user))
