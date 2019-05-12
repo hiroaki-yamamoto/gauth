@@ -32,11 +32,18 @@ func (me TimeMock) Now() time.Time {
 	return me.Time
 }
 
+func performLogin(conf *config.Config) (
+	*httptest.ResponseRecorder, User, error,
+) {
+	rec := httptest.NewRecorder()
+	user := User{Username: "test_username"}
+	err := core.Login(rec, conf, user)
+	return rec, user, err
+}
+
 func TestCookieLogin(t *testing.T) {
 	clock.Clock = TimeMock{time.Unix(time.Now().Unix(), 0).UTC()}
 	now := clock.Clock.Now()
-	rec := httptest.NewRecorder()
-	user := User{Username: "test_username"}
 	conf, err := config.New(
 		"session", config.Cookie, jwt.NewHS256("test"),
 		"Test Audience", "Test Issuer", "Test Subject",
@@ -49,7 +56,8 @@ func TestCookieLogin(t *testing.T) {
 		},
 	)
 	assert.NilError(t, err)
-	core.Login(rec, conf, user)
+	rec, user, err := performLogin(conf)
+	assert.NilError(t, err)
 	var session *http.Cookie
 	for _, cookie := range rec.Result().Cookies() {
 		if cookie.Name == conf.SessionName {
@@ -66,4 +74,36 @@ func TestCookieLogin(t *testing.T) {
 
 	assert.Equal(t, session.Expires, now.Add(conf.ExpireIn))
 	assert.Equal(t, session.MaxAge, int(conf.ExpireIn/time.Second))
+
+	parsedToken, err := core.ExtractToken(session.Value, conf)
+	assert.NilError(t, err)
+	assert.Equal(t, parsedToken.ID, user.Username)
+
+	t.Run("Invalid token generation case", func(t *testing.T) {
+		conf.Signer = jwt.NewHS256("")
+		_, _, err := performLogin(conf)
+		assert.Error(t, err, "jwt: HMAC key is empty")
+	})
+}
+
+func TestHeaderLogin(t *testing.T) {
+	clock.Clock = TimeMock{time.Unix(time.Now().Unix(), 0).UTC()}
+	conf, err := config.New(
+		"Auth", config.Header, jwt.NewHS256("test"),
+		"Test Audience", "Test Issuer", "Test Subject",
+		3600*time.Minute, config.CookieConfig{},
+	)
+	assert.NilError(t, err)
+	rec, user, err := performLogin(conf)
+	assert.NilError(t, err)
+	session := rec.Header().Get("X-" + conf.SessionName)
+	parsedToken, err := core.ExtractToken(session, conf)
+	assert.NilError(t, err)
+	assert.Equal(t, parsedToken.ID, user.Username)
+
+	t.Run("Invalid token generation case", func(t *testing.T) {
+		conf.Signer = jwt.NewHS256("")
+		_, _, err := performLogin(conf)
+		assert.Error(t, err, "jwt: HMAC key is empty")
+	})
 }
