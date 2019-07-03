@@ -3,6 +3,9 @@ jobs:
   build:
     docker:
       - image: golang:latest
+        environment:
+          GO111MODULE: on
+    working_directory: /go/src/github.com/hiroaki-yamamoto/gauth
     steps:
       - checkout
       - restore_cache:
@@ -26,7 +29,7 @@ jobs:
       - run:
           name: "Test & Upload the coverage"
           command: |
-            # ../cc-test-reporter before-build &&
+            ../cc-test-reporter before-build &&
             go test -coverprofile=c.out ./config ./clock ./core ./middleware
-            # export EXIT_CODE=${?};
-            # ../cc-test-reporter after-build --exit-code $EXIT_CODE -t gocov
+            export EXIT_CODE=${?};
+            ../cc-test-reporter after-build --exit-code $EXIT_CODE -t gocov
