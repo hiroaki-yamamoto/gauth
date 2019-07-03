@@ -8,17 +8,17 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - ci-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+            - ci-{{ .Branch }}-{{ checksum "go.sum" }}
       - run:
-          name: "Run go mod download"
-          command: "go mod download"
+          name: "Run go mod get"
+          command: "go get"
       - run:
           name: "Download Code Climate App"
           command: |
             curl -o ../cc-test-reporter -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 &&
             chmod +x ../cc-test-reporter
       - save_cache:
-          key: ci-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          key: ci-{{ .Branch }}-{{ checksum "go.sum" }}
           paths:
             - "/go/src"
       - run:
