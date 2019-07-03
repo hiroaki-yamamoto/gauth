@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: golang:latest
         environment:
-          GO111MODULE: on
+          GO111MODULE: 'on'
     working_directory: /go/src/github.com/hiroaki-yamamoto/gauth
     steps:
       - checkout
