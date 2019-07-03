@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gbrlsnchs/jwt"
+	"github.com/gbrlsnchs/jwt/v2"
 )
 
 // MiddlewareType indicates the type of middleware to be used.
