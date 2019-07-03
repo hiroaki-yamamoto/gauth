@@ -10,7 +10,7 @@ jobs:
           keys:
             - ci-{{ .Branch }}-{{ checksum "go.sum" }}
       - run:
-          name: "Run go mod get"
+          name: "Run go get"
           command: "go get"
       - run:
           name: "Download Code Climate App"
