@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: golang:latest
-    # working_directory: /go/src/github.com/hiroaki-yamamoto/gauth
     steps:
       - checkout
       - restore_cache:
