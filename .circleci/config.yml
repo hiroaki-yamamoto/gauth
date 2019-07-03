@@ -21,6 +21,9 @@ jobs:
           paths:
             - "/go/src"
       - run:
+          name: "check clock file"
+          command: ls -l ./clock
+      - run:
           name: "Test & Upload the coverage"
           command: |
             ../cc-test-reporter before-build &&
