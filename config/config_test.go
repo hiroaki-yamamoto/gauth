@@ -9,8 +9,8 @@ import (
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 
 	"github.com/gbrlsnchs/jwt/v2"
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 // Config Test

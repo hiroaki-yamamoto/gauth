@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 var now = time.Now().UTC()

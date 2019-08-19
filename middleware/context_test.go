@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gbrlsnchs/jwt/v2"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 
 	"github.com/hiroaki-yamamoto/gauth/clock"
 	"github.com/hiroaki-yamamoto/gauth/config"

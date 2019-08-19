@@ -11,7 +11,7 @@ import (
 	"github.com/gbrlsnchs/jwt/v2"
 	"github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 // Login test

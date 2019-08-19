@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/hiroaki-yamamoto/gauth/clock"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 // Clock test
