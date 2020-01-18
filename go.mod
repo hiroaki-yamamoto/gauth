@@ -4,6 +4,6 @@ go 1.12
 
 require (
 	github.com/gbrlsnchs/jwt/v2 v2.0.0
-	github.com/google/go-cmp v0.3.1
+	github.com/google/go-cmp v0.4.0
 	gotest.tools/v3 v3.0.0
 )
