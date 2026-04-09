@@ -7,10 +7,10 @@
 
 [CircleCI]: https://circleci.com/gh/hiroaki-yamamoto/gauth.svg?style=svg
 [CircleCi Link]: https://circleci.com/gh/hiroaki-yamamoto/gauth
-[Maintainability]: https://api.codeclimate.com/v1/badges/f6d582ecf0d16d32819a/maintainability
-[Maintainability Link]: https://codeclimate.com/github/hiroaki-yamamoto/gauth/maintainability
-[Test Coverage]: https://api.codeclimate.com/v1/badges/f6d582ecf0d16d32819a/test_coverage
-[Test Coverage Link]: https://codeclimate.com/github/hiroaki-yamamoto/gauth/test_coverage
+[Maintainability]: https://qlty.sh/gh/hiroaki-yamamoto/projects/gauth/maintainability.svg
+[Maintainability Link]: https://qlty.sh/gh/hiroaki-yamamoto/projects/gauth
+[Test Coverage]: https://qlty.sh/gh/hiroaki-yamamoto/projects/gauth/coverage.svg
+[Test Coverage Link]: https://qlty.sh/gh/hiroaki-yamamoto/projects/gauth
 [Go Report Card]: https://goreportcard.com/badge/github.com/hiroaki-yamamoto/gauth
 [Go Report Card Link]: https://goreportcard.com/report/github.com/hiroaki-yamamoto/gauth
 
