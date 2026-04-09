@@ -26,7 +26,11 @@ I wrote this package to provide a minimum authentication function.
 
 ## Installation
 
-You can install the package as usual e.g. `dep ensure -add github.com/hiroaki-yamamoto/gauth`.
+You can include this package in your project by importing it.
+
+```go
+import "github.com/hiroaki-yamamoto/gauth"
+```
 
 ## How to use
 
