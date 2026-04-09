@@ -1,12 +1,12 @@
 # JWT-based session middleware for go
 
-[![CircleCI]][CircleCi Link]
+[![Test Status]][Test Status Link]
 [![Maintainability]][Maintainability Link]
 [![Test Coverage]][Test Coverage Link]
 [![Go Report Card]][Go Report Card Link]
 
-[CircleCI]: https://circleci.com/gh/hiroaki-yamamoto/gauth.svg?style=svg
-[CircleCi Link]: https://circleci.com/gh/hiroaki-yamamoto/gauth
+[Test Status]: https://github.com/hiroaki-yamamoto/gauth/actions/workflows/test.yml/badge.svg
+[Test Status Link]: https://github.com/hiroaki-yamamoto/gauth/actions/workflows/test.yml
 [Maintainability]: https://qlty.sh/gh/hiroaki-yamamoto/projects/gauth/maintainability.svg
 [Maintainability Link]: https://qlty.sh/gh/hiroaki-yamamoto/projects/gauth
 [Test Coverage]: https://qlty.sh/gh/hiroaki-yamamoto/projects/gauth/coverage.svg
