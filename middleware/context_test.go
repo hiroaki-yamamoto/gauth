@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gbrlsnchs/jwt/v2"
+	"github.com/gbrlsnchs/jwt/v3"
 	"gotest.tools/v3/assert"
 
 	"github.com/hiroaki-yamamoto/gauth/clock"
