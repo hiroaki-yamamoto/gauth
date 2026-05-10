@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gbrlsnchs/jwt/v3"
+	"codeberg.org/gbrlsnchs/jwt"
 	"gotest.tools/v3/assert"
 
 	"github.com/hiroaki-yamamoto/gauth/clock"
@@ -19,6 +19,17 @@ import (
 	"github.com/hiroaki-yamamoto/gauth/core"
 	mid "github.com/hiroaki-yamamoto/gauth/middleware"
 )
+
+func mustHS256(k string) jwt.Signer {
+	for len(k) < 32 {
+		k += "0"
+	}
+	s, err := jwt.NewHS256([]byte(k))
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
 
 type Middleware func(
 	interface{},
@@ -73,14 +84,16 @@ func cookieTest(
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		rec := httptest.NewRecorder()
-		token, err := core.ComposeToken(&jwt.JWT{
-			Issuer:         conf.Issuer,
-			Subject:        conf.Subject,
-			Audience:       conf.Audience,
-			ExpirationTime: now.Add(expdiff).Unix(),
-			NotBefore:      now.Unix(),
-			IssuedAt:       now.Unix(),
-			ID:             username,
+		token, err := core.ComposeToken(&jwt.JWT[jwt.None]{
+			Claims: jwt.Claims[jwt.None]{
+				Issuer:     conf.Issuer,
+				Subject:    conf.Subject,
+				Audience:   jwt.Audience{conf.Audience},
+				Expiration: jwt.ConvertTime(now.Add(expdiff)),
+				NotBefore:  jwt.ConvertTime(now),
+				IssuedAt:   jwt.ConvertTime(now),
+				JWTID:      username,
+			},
 		}, conf.Signer)
 		assert.NilError(t, err)
 		req.AddCookie(&http.Cookie{
@@ -110,7 +123,7 @@ func cookieTest(
 			assert.NilError(t, err)
 			assert.Equal(
 				t,
-				time.Unix(tok.ExpirationTime, 0).UTC(),
+				tok.Claims.Expiration.Time().UTC(),
 				clock.Clock.Now().Add(3600*time.Hour),
 			)
 		} else {
@@ -148,14 +161,16 @@ func headerTest(
 	return func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		rec := httptest.NewRecorder()
-		token, err := core.ComposeToken(&jwt.JWT{
-			Issuer:         conf.Issuer,
-			Subject:        conf.Subject,
-			Audience:       conf.Audience,
-			ExpirationTime: now.Add(expdiff).Unix(),
-			NotBefore:      now.Unix(),
-			IssuedAt:       now.Unix(),
-			ID:             username,
+		token, err := core.ComposeToken(&jwt.JWT[jwt.None]{
+			Claims: jwt.Claims[jwt.None]{
+				Issuer:     conf.Issuer,
+				Subject:    conf.Subject,
+				Audience:   jwt.Audience{conf.Audience},
+				Expiration: jwt.ConvertTime(now.Add(expdiff)),
+				NotBefore:  jwt.ConvertTime(now),
+				IssuedAt:   jwt.ConvertTime(now),
+				JWTID:      username,
+			},
 		}, conf.Signer)
 		assert.NilError(t, err)
 		req.Header.Add(headerName, string(token))
@@ -180,7 +195,7 @@ func headerTest(
 			assert.NilError(t, err)
 			assert.Equal(
 				t,
-				time.Unix(hdrTok.ExpirationTime, 0).UTC(),
+				hdrTok.Claims.Expiration.Time().UTC(),
 				clock.Clock.Now().Add(3600*time.Hour),
 			)
 			return
@@ -207,7 +222,7 @@ func deployHeaderTest(
 	conf, err := _conf.New(
 		"Authorization",
 		_conf.Header,
-		jwt.NewHS256("test"),
+		mustHS256("test"),
 		"Test Audience",
 		"Test Issuer",
 		"Test Subject",
@@ -307,7 +322,7 @@ func deployCookieTest(
 	conf, err := _conf.New(
 		"session",
 		_conf.Cookie,
-		jwt.NewHS256("test"),
+		mustHS256("test"),
 		"Test Audience",
 		"Test Issuer",
 		"Test Subject",

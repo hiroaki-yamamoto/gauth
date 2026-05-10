@@ -8,11 +8,16 @@ import (
 
 	"github.com/hiroaki-yamamoto/gauth/clock"
 
-	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
 	"gotest.tools/v3/assert"
+	"errors"
 )
+
+type mockSigner struct{}
+func (m mockSigner) Name() string { return "MOCK" }
+func (m mockSigner) Sign(payload []byte) ([]byte, error) { return nil, errors.New("mock sign error") }
+func (m mockSigner) Size() int { return 0 }
 
 // Login test
 
@@ -45,7 +50,7 @@ func TestCookieLogin(t *testing.T) {
 	clock.Clock = TimeMock{time.Unix(time.Now().Unix(), 0).UTC()}
 	now := clock.Clock.Now()
 	conf, err := config.New(
-		"session", config.Cookie, jwt.NewHS256("test"),
+		"session", config.Cookie, mustHS256("test"),
 		"Test Audience", "Test Issuer", "Test Subject",
 		3600*time.Minute, config.CookieConfig{
 			Path:     "/",
@@ -77,19 +82,19 @@ func TestCookieLogin(t *testing.T) {
 
 	parsedToken, err := core.ExtractToken(session.Value, conf)
 	assert.NilError(t, err)
-	assert.Equal(t, parsedToken.ID, user.Username)
+	assert.Equal(t, parsedToken.Claims.JWTID, user.Username)
 
 	t.Run("Invalid token generation case", func(t *testing.T) {
-		conf.Signer = jwt.NewHS256("")
+		conf.Signer = mockSigner{}
 		_, _, err := performLogin(conf)
-		assert.Error(t, err, "jwt: HMAC key is empty")
+		assert.Error(t, err, "mock sign error")
 	})
 }
 
 func TestHeaderLogin(t *testing.T) {
 	clock.Clock = TimeMock{time.Unix(time.Now().Unix(), 0).UTC()}
 	conf, err := config.New(
-		"Auth", config.Header, jwt.NewHS256("test"),
+		"Auth", config.Header, mustHS256("test"),
 		"Test Audience", "Test Issuer", "Test Subject",
 		3600*time.Minute, config.CookieConfig{},
 	)
@@ -99,11 +104,11 @@ func TestHeaderLogin(t *testing.T) {
 	session := rec.Header().Get("X-" + conf.SessionName)
 	parsedToken, err := core.ExtractToken(session, conf)
 	assert.NilError(t, err)
-	assert.Equal(t, parsedToken.ID, user.Username)
+	assert.Equal(t, parsedToken.Claims.JWTID, user.Username)
 
 	t.Run("Invalid token generation case", func(t *testing.T) {
-		conf.Signer = jwt.NewHS256("")
+		conf.Signer = mockSigner{}
 		_, _, err := performLogin(conf)
-		assert.Error(t, err, "jwt: HMAC key is empty")
+		assert.Error(t, err, "mock sign error")
 	})
 }

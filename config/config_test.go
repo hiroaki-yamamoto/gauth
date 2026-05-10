@@ -8,10 +8,22 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 
-	"github.com/gbrlsnchs/jwt/v3"
+	"codeberg.org/gbrlsnchs/jwt"
+
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 )
+
+func mustHS256(k string) jwt.Signer {
+	for len(k) < 32 {
+		k += "0"
+	}
+	s, err := jwt.NewHS256([]byte(k))
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
 
 // Config Test
 
@@ -23,7 +35,7 @@ func TestConfigNew(t *testing.T) {
 		cookieConfig,
 		"session",
 		_conf.Header,
-		jwt.NewHS256("test"),
+		mustHS256("test"),
 		"test audience",
 		"test issuer",
 		"test subject",
@@ -53,7 +65,7 @@ func TestConfigNewWithNegExp(t *testing.T) {
 	config, err := _conf.New(
 		"session",
 		_conf.Header,
-		jwt.NewHS256("test"),
+		mustHS256("test"),
 		"test audience",
 		"test issuer",
 		"test subject",
@@ -71,7 +83,7 @@ func TestConfigNewWithZeroExp(t *testing.T) {
 	config := &_conf.Config{
 		SessionName:    "session",
 		MiddlewareType: _conf.Header,
-		Signer:         jwt.NewHS256("test"),
+		Signer:         mustHS256("test"),
 		Audience:       "test audience",
 		Issuer:         "test issuer",
 		Subject:        "test subject",

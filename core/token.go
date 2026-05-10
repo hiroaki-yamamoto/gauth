@@ -1,64 +1,83 @@
 package core
 
 import (
+	"errors"
 	"time"
 
-	"github.com/gbrlsnchs/jwt/v3"
+	"codeberg.org/gbrlsnchs/jwt"
 	"github.com/hiroaki-yamamoto/gauth/config"
 )
 
 // ComposeToken generates JWT token string from specified paramenters.
-func ComposeToken(model *jwt.JWT, signer jwt.Signer) ([]byte, error) {
-	payload, _ := jwt.Marshal(model)
-	// In jwt.JWT case, no errors seem to be returned for now.
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return signer.Sign(payload)
+func ComposeToken(model *jwt.JWT[jwt.None], signer jwt.Signer) ([]byte, error) {
+	return jwt.Sign(model, signer)
 }
 
 // ComposeID generates JWT token string with specified ID
 // (that is generally used as an username) and Config.
 func ComposeID(ID string, config *config.Config) ([]byte, error) {
 	now := time.Now()
-	jwt := &jwt.JWT{
-		Issuer:         config.Issuer,
-		Subject:        config.Subject,
-		Audience:       config.Audience,
-		ExpirationTime: now.Add(config.ExpireIn).Unix(),
-		NotBefore:      now.Unix(),
-		IssuedAt:       now.Unix(),
-		ID:             ID,
+	var aud jwt.Audience
+	if config.Audience != "" {
+		aud = jwt.Audience{config.Audience}
 	}
-	return ComposeToken(jwt, config.Signer)
+	jot := &jwt.JWT[jwt.None]{
+		Claims: jwt.Claims[jwt.None]{
+			Issuer:     config.Issuer,
+			Subject:    config.Subject,
+			Audience:   aud,
+			Expiration: jwt.ConvertTime(now.Add(config.ExpireIn)),
+			NotBefore:  jwt.ConvertTime(now),
+			IssuedAt:   jwt.ConvertTime(now),
+			JWTID:      ID,
+		},
+	}
+	return ComposeToken(jot, config.Signer)
 }
 
 // ExtractToken extracts token string into verified JWT object.
 func ExtractToken(
 	token string,
 	config *config.Config,
-) (*jwt.JWT, error) {
+) (*jwt.JWT[jwt.None], error) {
 	now := time.Now().UTC()
-	payload, sig, err := jwt.Parse(token)
+	t, err := jwt.Parse([]byte(token))
 	if err != nil {
 		return nil, err
 	}
-	var jot jwt.JWT
-	if err = config.Signer.Verify(payload, sig); err != nil {
+
+	verifier, ok := config.Signer.(jwt.Verifier)
+	if !ok {
+		return nil, errors.New("Signer does not implement jwt.Verifier")
+	}
+
+	if err = jwt.Verify(t, verifier); err != nil {
 		return nil, err
 	}
-	if err = jwt.Unmarshal(payload, &jot); err != nil {
-		return nil, err
-	}
-	err = jot.Validate(
-		jwt.IssuedAtValidator(now),
-		jwt.ExpirationTimeValidator(now),
-		jwt.AudienceValidator(config.Audience),
-		jwt.IssuerValidator(config.Issuer),
-		jwt.SubjectValidator(config.Subject),
-	)
+
+	jot, err := jwt.Decode[jwt.None](t)
 	if err != nil {
 		return nil, err
 	}
-	return &jot, nil
+
+	if jot.IsExpired(now) {
+		return nil, errors.New("jwt is expired")
+	}
+	if !jot.IsActive(now) {
+		return nil, errors.New("jwt is not active yet")
+	}
+	if time.Unix(int64(jot.Claims.IssuedAt), 0).After(now) {
+		return nil, errors.New("jwt used before issued")
+	}
+	if config.Audience != "" && !jot.InScope(config.Audience) {
+		return nil, errors.New("invalid audience")
+	}
+	if config.Issuer != "" && jot.Claims.Issuer != config.Issuer {
+		return nil, errors.New("invalid issuer")
+	}
+	if config.Subject != "" && jot.Claims.Subject != config.Subject {
+		return nil, errors.New("invalid subject")
+	}
+
+	return jot, nil
 }

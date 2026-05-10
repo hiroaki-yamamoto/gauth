@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  GO111MODULE: "on"
+  GOEXPERIMENT: "jsonv2"
 
 jobs:
   build:
