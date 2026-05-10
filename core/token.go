@@ -3,7 +3,7 @@ package core
 import (
 	"time"
 
-	"github.com/gbrlsnchs/jwt/v2"
+	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/hiroaki-yamamoto/gauth/config"
 )
 

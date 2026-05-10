@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	_conf "github.com/hiroaki-yamamoto/gauth/config"
 
-	"github.com/gbrlsnchs/jwt/v2"
+	"github.com/gbrlsnchs/jwt/v3"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 )

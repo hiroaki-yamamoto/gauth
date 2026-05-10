@@ -8,7 +8,7 @@ import (
 
 	"github.com/hiroaki-yamamoto/gauth/clock"
 
-	"github.com/gbrlsnchs/jwt/v2"
+	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/hiroaki-yamamoto/gauth/config"
 	"github.com/hiroaki-yamamoto/gauth/core"
 	"gotest.tools/v3/assert"
