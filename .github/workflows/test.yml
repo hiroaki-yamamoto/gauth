@@ -34,7 +34,7 @@ jobs:
 
       - name: Test
         run: |
-          go test -coverprofile=c.out ./config ./clock ./core ./middleware
+          make test
       - name: Upload coverage to Qlty
         uses: qltysh/qlty-action/coverage@v2
         with:

@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"testing"
 	"time"
@@ -150,6 +151,13 @@ func TestValidationFailure(t *testing.T) {
 		payload, _ := core.ComposeToken(tok, signer)
 		extractAndCheck(payload, tok, t)
 	})
+	t.Run("Not Active", func(t *testing.T) {
+		tok := GetFixture()
+		tok.Claims.NotBefore = jwt.ConvertTime(now.Add(5 * time.Hour))
+		payload, _ := core.ComposeToken(tok, signer)
+		extractAndCheck(payload, tok, t)
+	})
+
 	t.Run("Audience is not correct", func(t *testing.T) {
 		tok1 := GetFixture()
 		tok2 := GetFixture()
@@ -190,4 +198,59 @@ func TestValidationFailure(t *testing.T) {
 			t.Fatal("extractToken must not have an error: ", err)
 		}
 	})
+}
+
+type dummySigner struct{}
+
+func (dummySigner) Name() string                        { return "DUMMY" }
+func (dummySigner) Sign(payload []byte) ([]byte, error) { return []byte("dummy signature"), nil }
+func (dummySigner) Size() int                           { return 15 }
+
+func TestExtractTokenNotVerifier(t *testing.T) {
+	signer := mustHS256("test secret key")
+	tok := GetFixture()
+	payload, _ := core.ComposeToken(tok, signer)
+
+	extracted, err := core.ExtractToken(
+		string(payload),
+		&_conf.Config{
+			Signer:   dummySigner{},
+			Audience: tok.Claims.Audience[0],
+			Issuer:   tok.Claims.Issuer,
+			Subject:  tok.Claims.Subject,
+			ExpireIn: 2 * time.Hour,
+		},
+	)
+	assert.ErrorContains(t, err, "Signer does not implement jwt.Verifier")
+	assert.Assert(t, extracted == nil, extracted)
+}
+
+func TestDecodeFailure(t *testing.T) {
+	signer := mustHS256("test secret key")
+
+	header := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" // {"alg":"HS256","typ":"JWT"}
+	// base64 url encoded `{"exp":"not-a-number"}`
+	// {"exp":"not-a-number"} -> eyJleHAiOiJub3QtYS1udW1iZXIifQ
+	payload := "eyJleHAiOiJub3QtYS1udW1iZXIifQ"
+
+	unsigned := header + "." + payload
+	sig, err := signer.Sign([]byte(unsigned))
+	assert.NilError(t, err)
+
+	token := unsigned + "." + base64.RawURLEncoding.EncodeToString(sig)
+
+	extracted, err := core.ExtractToken(
+		token,
+		&_conf.Config{
+			Signer:   signer,
+			Audience: "",
+			Issuer:   "",
+			Subject:  "",
+			ExpireIn: 2 * time.Hour,
+		},
+	)
+	if err == nil {
+		t.Fatal("expected Decode to fail, but it succeeded")
+	}
+	assert.Assert(t, extracted == nil, extracted)
 }
