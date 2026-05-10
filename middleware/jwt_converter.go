@@ -23,10 +23,10 @@ func JwtToUser(
 	if err != nil {
 		return nil, err
 	}
-	if len(token.ID) < 1 {
+	if len(token.Claims.JWTID) < 1 {
 		return nil, errors.New("Not authenticated user")
 	}
-	user, err := findUserFunc(con, token.ID)
+	user, err := findUserFunc(con, token.Claims.JWTID)
 	if err != nil {
 		return nil, err
 	}
